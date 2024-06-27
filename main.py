@@ -37,13 +37,13 @@ centered_margin_x = (SCREEN_WIDTH - BOARD_WIDTH) // 2
 centered_margin_y = (SCREEN_HEIGHT - BOARD_HEIGHT) // 2 - 50
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.setCaption("Sovereign's Gambit - Board and Deck")
+pygame.display.set_caption("Sovereign's Gambit - Board and Deck")
 
 # Load images
 green_pawn_image = pygame.image.load(GREEN_PAWN_IMAGE_PATH)
-green_pawn_image = pygame.transform.scale(green_pawn_image, (RECT_WIDTH, RECT_HEIGHT))
+green_pawn_image = pygame.transform.scale(green_pawn_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
 red_pawn_image = pygame.image.load(RED_PAWN_IMAGE_PATH)
-red_pawn_image = pygame.transform.scale(red_pawn_image, (RECT_WIDTH, RECT_HEIGHT))
+red_pawn_image = pygame.transform.scale(red_pawn_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
 
 font = pygame.font.SysFont(None, 55)
 
@@ -121,9 +121,9 @@ while running:
 
             # Draw pawns in columns 1 and 5
             if col == 1:
-                screen.blit(green_pawn_image, (space_x, space_y))
+                screen.blit(green_pawn_image, (space_x + 1, space_y + 1))
             elif col == 5:
-                screen.blit(red_pawn_image, (space_x, space_y))
+                screen.blit(red_pawn_image, (space_x + 1, space_y + 1))
 
             # Draw player and AI values in columns 0 and 6
             if col == 0:
