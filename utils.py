@@ -68,4 +68,3 @@ def ai_place_card(ai_hand_cards, board_values, ai_deck, green_pawn_image, red_pa
                             draw_card_from_ai_deck(ai_deck)
                             print(f"AI placed {card['card'].name} at ({row}, {col})")
                             return
-
