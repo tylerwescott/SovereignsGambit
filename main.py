@@ -3,7 +3,7 @@ import sys
 from constants import *
 from deck import Deck
 from images import load_images
-from utils import draw_rotated_card, get_arc_position_and_angle, update_hand_positions
+from utils import draw_rotated_card, get_arc_position_and_angle, update_hand_positions, ai_place_card, place_card_pawns
 from card import Card
 
 pygame.init()
@@ -43,6 +43,10 @@ ai_target_angle = 0
 ai_initial_draw_count = 5
 ai_auto_drawing = True  # Flag to control automatic drawing at start
 original_ai_hand_positions = []
+
+# Turn variables
+is_player_turn = True
+turn_end = False
 
 # Set up the screen
 centered_margin_x = (SCREEN_WIDTH - BOARD_WIDTH) // 2
@@ -92,22 +96,6 @@ def draw_card_from_ai_deck(deck):
             ai_hand_cards.pop()
             ai_arc_progress = 0
 
-def place_card_pawns(card, base_row, base_col, player):
-    for placement in card.pawn_placement:
-        row_offset, col_offset = placement
-        new_row = base_row + row_offset
-        new_col = base_col + col_offset
-        if 0 <= new_row < BOARD_ROWS and 1 <= new_col <= 5:  # Ensure placement is within columns 1 to 5
-            index = new_row * BOARD_COLS + new_col
-            if board_values[index]['image'] is None:  # Update only if no card image is present
-                if player:
-                    board_values[index]['player'] += 1
-                    board_values[index]['ai'] = 0  # Zero out AI's pawn count
-                else:
-                    board_values[index]['ai'] += 1
-                    board_values[index]['player'] = 0  # Zero out player's pawn count
-                board_values[index]['image'] = green_pawn_image if player else red_pawn_image
-
 def place_card_on_board(card, row, col, player=True):
     index = row * BOARD_COLS + col
     if player:
@@ -118,7 +106,8 @@ def place_card_on_board(card, row, col, player=True):
         board_values[index]['player'] = 0
     board_values[index]['image'] = card.image
     board_values[index]['card'] = card  # Store the card itself
-    place_card_pawns(card, row, col, player)
+    place_card_pawns(card, row, col, player, board_values, green_pawn_image, red_pawn_image)
+    print(f"Card {card.name} placed at ({row}, {col}). Player: {board_values[index]['player']}, AI: {board_values[index]['ai']}")
 
 # Initiate drawing the first card for player and AI
 draw_card_from_player_deck(player_deck)
@@ -126,10 +115,19 @@ draw_card_from_ai_deck(ai_deck)
 
 running = True
 while running:
+    if turn_end:
+        if is_player_turn:
+            is_player_turn = False
+            ai_place_card(ai_hand_cards, board_values, ai_deck, green_pawn_image, red_pawn_image, draw_card_from_ai_deck, place_card_on_board, original_ai_hand_positions)
+            turn_end = True  # Ensure the player's turn starts in the next iteration
+        else:
+            is_player_turn = True
+            turn_end = False  # Reset turn_end for the next turn
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN:
+        elif event.type == pygame.MOUSEBUTTONDOWN and is_player_turn:
             mouse_x, mouse_y = event.pos
             if moving_card is None:
                 for card in player_hand_cards:
@@ -141,7 +139,7 @@ while running:
             if PLAYER_DECK_POSITION_X <= mouse_x <= PLAYER_DECK_POSITION_X + DECK_CARD_WIDTH and \
                PLAYER_DECK_POSITION_Y <= mouse_y <= DECK_CARD_HEIGHT + PLAYER_DECK_POSITION_Y:
                 draw_card_from_player_deck(player_deck)
-        elif event.type == pygame.MOUSEBUTTONUP:
+        elif event.type == pygame.MOUSEBUTTONUP and is_player_turn:
             if dragging_card:
                 mouse_x, mouse_y = event.pos
                 valid_placement = False
@@ -157,6 +155,7 @@ while running:
                                 player_hand_cards.remove(dragging_card)
                                 update_hand_positions(player_hand_cards, PLAYER_HAND_POSITION_Y, original_player_hand_positions)
                                 valid_placement = True
+                                turn_end = True
                                 break
                 if not valid_placement:
                     # Snap back to original position
