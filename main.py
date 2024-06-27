@@ -35,6 +35,7 @@ GREEN_PAWN_IMAGE_PATH = 'images/greenPawn.jpg'
 RED_PAWN_IMAGE_PATH = 'images/redPawn.jpg'
 FOOT_SOLDIER_IMAGE_PATH = 'images/footSoldier.jpg'
 APPRENTICE_IMAGE_PATH = 'images/apprentice.jpg'
+ROGUE_IMAGE_PATH = 'images/rogue.jpg'
 
 # Load images
 green_pawn_image = pygame.image.load(GREEN_PAWN_IMAGE_PATH)
@@ -45,6 +46,8 @@ foot_soldier_image = pygame.image.load(FOOT_SOLDIER_IMAGE_PATH)
 foot_soldier_image = pygame.transform.scale(foot_soldier_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
 apprentice_image = pygame.image.load(APPRENTICE_IMAGE_PATH)
 apprentice_image = pygame.transform.scale(apprentice_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
+rogue_image = pygame.image.load(ROGUE_IMAGE_PATH)
+rogue_image = pygame.transform.scale(rogue_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
 
 # Font
 font = pygame.font.SysFont(None, 55)
@@ -64,6 +67,7 @@ class Card:
 # Create card instances
 foot_soldier_card = Card("Foot Soldier", 1, foot_soldier_image, [(0, 1)])
 apprentice_card = Card("Apprentice", 1, apprentice_image, [(0, 2)])
+rogue_card = Card("Rogue", 1, rogue_image, [(0, 3)])
 
 # Deck class
 class Deck:
@@ -76,9 +80,12 @@ class Deck:
             return self.cards.pop()
         return None
 
-# Initialize player and AI decks
-player_deck = Deck([foot_soldier_card, apprentice_card] * 5)
-ai_deck = Deck([foot_soldier_card, apprentice_card] * 5)
+    def cards_left(self):
+        return len(self.cards)
+
+# Initialize player and AI decks with 30 cards each
+player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card] * 10)
+ai_deck = Deck([foot_soldier_card, apprentice_card, rogue_card] * 10)
 
 # Hand cards and other variables
 hand_cards = []
@@ -160,7 +167,7 @@ def place_card_pawns(card, base_row, base_col):
         row_offset, col_offset = placement
         new_row = base_row + row_offset
         new_col = base_col + col_offset
-        if 0 <= new_row < BOARD_ROWS and 0 <= new_col < BOARD_COLS:
+        if 0 <= new_row < BOARD_ROWS and 1 <= new_col <= 5:  # Ensure placement is within columns 1 to 5
             index = new_row * BOARD_COLS + new_col
             board_values[index]['player'] += 1
             board_values[index]['image'] = green_pawn_image
@@ -236,23 +243,19 @@ while running:
                 elif col == 5:
                     screen.blit(red_pawn_image, (space_x + 1, space_y + 1))
 
-            # Draw player and AI values in columns 0 and 6
-            if col == 0:
-                value = player_value
-                text = font.render(str(value), True, BLACK)
-                text_rect = text.get_rect(center=space.center)
-                screen.blit(text, text_rect)
-            elif col == 6:
-                value = ai_value
-                text = font.render(str(value), True, BLACK)
-                text_rect = text.get_rect(center=space.center)
-                screen.blit(text, text_rect)
-
     for i in range(5):
         card_x = DECK_POSITION_X + i * 2
         card_y = DECK_POSITION_Y - i * 2
         card = pygame.Rect(card_x, card_y, DECK_CARD_WIDTH, DECK_CARD_HEIGHT)
         pygame.draw.rect(screen, BLACK, card, 1)
+
+    # Display the number of cards in the player's hand
+    hand_count_text = font.render(f'Hand: {len(hand_cards)}', True, BLACK)
+    screen.blit(hand_count_text, (10, 10))
+
+    # Display the number of cards left in the player's deck
+    deck_count_text = font.render(f'Deck: {player_deck.cards_left()}', True, BLACK)
+    screen.blit(deck_count_text, (10, 70))
 
     if moving_card is not None:
         arc_progress += ANIMATION_SPEED
