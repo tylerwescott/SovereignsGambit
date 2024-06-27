@@ -24,6 +24,8 @@ DECK_CARD_HEIGHT = RECT_HEIGHT
 DECK_POSITION_X = 50
 DECK_POSITION_Y = SCREEN_HEIGHT - DECK_CARD_HEIGHT - 50
 HAND_POSITION_Y = SCREEN_HEIGHT - DECK_CARD_HEIGHT - 50
+AI_DECK_POSITION_X = SCREEN_WIDTH - DECK_CARD_WIDTH - 50
+AI_DECK_POSITION_Y = 50
 ANIMATION_SPEED = 0.005  # Significantly slower animation speed
 CARD_TILT_ANGLE = 5  # Slight tilt angle for the cards in hand
 OVERLAP_OFFSET = 60  # Increased amount of overlap between cards
@@ -36,6 +38,7 @@ RED_PAWN_IMAGE_PATH = 'images/redPawn.jpg'
 FOOT_SOLDIER_IMAGE_PATH = 'images/footSoldier.jpg'
 APPRENTICE_IMAGE_PATH = 'images/apprentice.jpg'
 ROGUE_IMAGE_PATH = 'images/rogue.jpg'
+SPEARMAN_IMAGE_PATH = 'images/spearman.jpg'
 
 # Load images
 green_pawn_image = pygame.image.load(GREEN_PAWN_IMAGE_PATH)
@@ -48,6 +51,8 @@ apprentice_image = pygame.image.load(APPRENTICE_IMAGE_PATH)
 apprentice_image = pygame.transform.scale(apprentice_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
 rogue_image = pygame.image.load(ROGUE_IMAGE_PATH)
 rogue_image = pygame.transform.scale(rogue_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
+spearman_image = pygame.image.load(SPEARMAN_IMAGE_PATH)
+spearman_image = pygame.transform.scale(spearman_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
 
 # Font
 font = pygame.font.SysFont(None, 55)
@@ -69,6 +74,7 @@ class Card:
 foot_soldier_card = Card("Foot Soldier", 1, foot_soldier_image, [(0, 1)])
 apprentice_card = Card("Apprentice", 1, apprentice_image, [(0, 2)])
 rogue_card = Card("Rogue", 1, rogue_image, [(0, 3)])
+spearman_card = Card("Spearman", 1, spearman_image, [(0, 1), (0, 2)])
 
 # Deck class
 class Deck:
@@ -85,8 +91,8 @@ class Deck:
         return len(self.cards)
 
 # Initialize player and AI decks with 30 cards each
-player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card] * 10)
-ai_deck = Deck([foot_soldier_card, apprentice_card, rogue_card] * 10)
+player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card] * 8)
+ai_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card] * 8)
 
 # Hand cards and other variables
 hand_cards = []
@@ -207,7 +213,7 @@ while running:
                         dragging_offset_y = card['rect'].y - mouse_y
                         break
             if DECK_POSITION_X <= mouse_x <= DECK_POSITION_X + DECK_CARD_WIDTH and \
-               DECK_POSITION_Y <= mouse_y <= DECK_POSITION_Y + DECK_CARD_HEIGHT:
+               DECK_POSITION_Y <= mouse_y <= DECK_CARD_HEIGHT + DECK_POSITION_Y:
                 draw_card_from_deck(player_deck)
         elif event.type == pygame.MOUSEBUTTONUP:
             if dragging_card:
@@ -273,6 +279,11 @@ while running:
         card = pygame.Rect(card_x, card_y, DECK_CARD_WIDTH, DECK_CARD_HEIGHT)
         pygame.draw.rect(screen, BLACK, card, 1)
 
+        ai_card_x = AI_DECK_POSITION_X + i * 2
+        ai_card_y = AI_DECK_POSITION_Y - i * 2
+        ai_card = pygame.Rect(ai_card_x, ai_card_y, DECK_CARD_WIDTH, DECK_CARD_HEIGHT)
+        pygame.draw.rect(screen, BLACK, ai_card, 1)
+
     # Display the number of cards in the player's hand
     hand_count_text = font.render(f'Hand: {len(hand_cards)}', True, BLACK)
     screen.blit(hand_count_text, (10, 10))
@@ -280,6 +291,10 @@ while running:
     # Display the number of cards left in the player's deck
     deck_count_text = font.render(f'Deck: {player_deck.cards_left()}', True, BLACK)
     screen.blit(deck_count_text, (10, 70))
+
+    # Display the number of cards left in the AI's deck
+    ai_deck_count_text = font.render(f'AI Deck: {ai_deck.cards_left()}', True, BLACK)
+    screen.blit(ai_deck_count_text, (10, 130))
 
     if moving_card is not None:
         arc_progress += ANIMATION_SPEED
