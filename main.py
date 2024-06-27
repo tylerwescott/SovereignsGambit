@@ -13,7 +13,7 @@ RECT_HEIGHT = RECT_WIDTH * 1.5
 BOARD_COLS = 7  # Number of columns
 BOARD_ROWS = 3  # Number of rows
 BOARD_WIDTH = RECT_WIDTH * BOARD_COLS
-BOARD_HEIGHT = RECT_HEIGHT * BOARD_ROWS
+BOARD_HEIGHT = RECT_HEIGHT * 3
 MARGIN = 300
 SCREEN_WIDTH = BOARD_WIDTH + 2 * MARGIN + 200
 SCREEN_HEIGHT = BOARD_HEIGHT + 2 * MARGIN + 100
@@ -155,6 +155,16 @@ def draw_card_from_deck(deck):
             hand_cards.pop()
             arc_progress = 0
 
+def place_card_pawns(card, base_row, base_col):
+    for placement in card.pawn_placement:
+        row_offset, col_offset = placement
+        new_row = base_row + row_offset
+        new_col = base_col + col_offset
+        if 0 <= new_row < BOARD_ROWS and 0 <= new_col < BOARD_COLS:
+            index = new_row * BOARD_COLS + new_col
+            board_values[index]['player'] += 1
+            board_values[index]['image'] = green_pawn_image
+
 # Initiate drawing the first card
 draw_card_from_deck(player_deck)
 
@@ -189,6 +199,7 @@ while running:
                             if board_values[index]['player'] >= dragging_card['card'].placement_cost:
                                 board_values[index]['player'] -= dragging_card['card'].placement_cost
                                 board_values[index]['image'] = dragging_card['card'].image
+                                place_card_pawns(dragging_card['card'], row, col)
                                 hand_cards.remove(dragging_card)
                                 update_hand_positions()
                                 valid_placement = True
