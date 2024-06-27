@@ -1,96 +1,21 @@
 import pygame
 import sys
-import random
-import math
+from constants import *
+from deck import Deck
+from images import load_images
+from utils import draw_rotated_card, get_arc_position_and_angle, update_hand_positions
+from card import Card
 
 pygame.init()
 
-# Constants
-ORIGINAL_RECT_WIDTH = 100
-ORIGINAL_RECT_HEIGHT = int(ORIGINAL_RECT_WIDTH * 1.5)
-RECT_WIDTH = ORIGINAL_RECT_WIDTH * 2
-RECT_HEIGHT = RECT_WIDTH * 1.5
-BOARD_COLS = 7  # Number of columns
-BOARD_ROWS = 3  # Number of rows
-BOARD_WIDTH = RECT_WIDTH * BOARD_COLS
-BOARD_HEIGHT = RECT_HEIGHT * 3
-MARGIN = 300
-SCREEN_WIDTH = BOARD_WIDTH + 2 * MARGIN + 200
-SCREEN_HEIGHT = BOARD_HEIGHT + 2 * MARGIN + 200  # Increased height for AI hand space
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-DECK_CARD_WIDTH = RECT_WIDTH
-DECK_CARD_HEIGHT = RECT_HEIGHT
-PLAYER_DECK_POSITION_X = 50
-PLAYER_DECK_POSITION_Y = SCREEN_HEIGHT - DECK_CARD_HEIGHT - 50
-PLAYER_HAND_POSITION_Y = SCREEN_HEIGHT - DECK_CARD_HEIGHT - 50
-AI_HAND_POSITION_Y = 50
-AI_DECK_POSITION_X = SCREEN_WIDTH - DECK_CARD_WIDTH - 50
-AI_DECK_POSITION_Y = 50
-ANIMATION_SPEED = 0.005  # Significantly slower animation speed
-CARD_TILT_ANGLE = 5  # Slight tilt angle for the cards in hand
-OVERLAP_OFFSET = 60  # Increased amount of overlap between cards
-ARC_HEIGHT = -100  # Height of the arc during the card movement (negative for upward arc)
-MAX_HAND_CARDS = 10  # Maximum number of cards in the hand
-
-# File paths
-GREEN_PAWN_IMAGE_PATH = 'images/greenPawn.jpg'
-RED_PAWN_IMAGE_PATH = 'images/redPawn.jpg'
-FOOT_SOLDIER_IMAGE_PATH = 'images/footSoldier.jpg'
-APPRENTICE_IMAGE_PATH = 'images/apprentice.jpg'
-ROGUE_IMAGE_PATH = 'images/rogue.jpg'
-SPEARMAN_IMAGE_PATH = 'images/spearman.jpg'
-
 # Load images
-green_pawn_image = pygame.image.load(GREEN_PAWN_IMAGE_PATH)
-green_pawn_image = pygame.transform.scale(green_pawn_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
-red_pawn_image = pygame.image.load(RED_PAWN_IMAGE_PATH)
-red_pawn_image = pygame.transform.scale(red_pawn_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
-foot_soldier_image = pygame.image.load(FOOT_SOLDIER_IMAGE_PATH)
-foot_soldier_image = pygame.transform.scale(foot_soldier_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
-apprentice_image = pygame.image.load(APPRENTICE_IMAGE_PATH)
-apprentice_image = pygame.transform.scale(apprentice_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
-rogue_image = pygame.image.load(ROGUE_IMAGE_PATH)
-rogue_image = pygame.transform.scale(rogue_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
-spearman_image = pygame.image.load(SPEARMAN_IMAGE_PATH)
-spearman_image = pygame.transform.scale(spearman_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
-
-# Font
-font = pygame.font.SysFont(None, 55)
-small_font = pygame.font.SysFont(None, 25)
-
-# Player and AI values
-player_value = 0
-ai_value = 0
-
-# Card data structure
-class Card:
-    def __init__(self, name, placement_cost, image, pawn_placement, strength):
-        self.name = name
-        self.placement_cost = placement_cost
-        self.image = image
-        self.pawn_placement = pawn_placement
-        self.strength = strength
+green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image = load_images()
 
 # Create card instances
 foot_soldier_card = Card("Foot Soldier", 1, foot_soldier_image, [(0, 1)], 2)
 apprentice_card = Card("Apprentice", 1, apprentice_image, [(0, 2)], 1)
 rogue_card = Card("Rogue", 1, rogue_image, [(0, 3)], 1)
 spearman_card = Card("Spearman", 1, spearman_image, [(0, 1), (0, 2)], 2)
-
-# Deck class
-class Deck:
-    def __init__(self, cards):
-        self.cards = cards
-        random.shuffle(self.cards)
-
-    def draw_card(self):
-        if self.cards:
-            return self.cards.pop()
-        return None
-
-    def cards_left(self):
-        return len(self.cards)
 
 # Initialize player and AI decks with 30 cards each
 player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card] * 8)
@@ -126,6 +51,10 @@ centered_margin_y = (SCREEN_HEIGHT - BOARD_HEIGHT) // 2
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Sovereign's Gambit - Board and Deck")
 
+# Fonts
+font = pygame.font.SysFont(None, 55)
+small_font = pygame.font.SysFont(None, 25)
+
 # Initialize the board with values
 board_values = [{'player': 0, 'ai': 0, 'image': None, 'card': None} for _ in range(BOARD_ROWS * BOARD_COLS)]
 for row in range(BOARD_ROWS):
@@ -135,50 +64,6 @@ for row in range(BOARD_ROWS):
         if col == 5:
             board_values[row * BOARD_COLS + col]['ai'] = 1
 
-def update_player_hand_positions():
-    global original_player_hand_positions
-    original_player_hand_positions = []
-    if player_hand_cards:
-        total_width = len(player_hand_cards) * (DECK_CARD_WIDTH - OVERLAP_OFFSET) + (len(player_hand_cards) - 1) * 10
-        start_x = (SCREEN_WIDTH - total_width) // 2
-        for i, card in enumerate(player_hand_cards):
-            pos = (start_x + i * (DECK_CARD_WIDTH - OVERLAP_OFFSET + 10), PLAYER_HAND_POSITION_Y)
-            card['rect'].topleft = pos
-            card['angle'] = -CARD_TILT_ANGLE * (i - (len(player_hand_cards) - 1) / 2)
-            original_player_hand_positions.append(pos)
-
-def update_ai_hand_positions():
-    global original_ai_hand_positions
-    original_ai_hand_positions = []
-    if ai_hand_cards:
-        total_width = len(ai_hand_cards) * (DECK_CARD_WIDTH - OVERLAP_OFFSET) + (len(ai_hand_cards) - 1) * 10
-        start_x = (SCREEN_WIDTH - total_width) // 2
-        for i, card in enumerate(ai_hand_cards):
-            pos = (start_x + i * (DECK_CARD_WIDTH - OVERLAP_OFFSET + 10), AI_HAND_POSITION_Y)
-            card['rect'].topleft = pos
-            card['angle'] = CARD_TILT_ANGLE * (i - (len(ai_hand_cards) - 1) / 2)
-            original_ai_hand_positions.append(pos)
-
-def draw_rotated_card(screen, card):
-    rect = card['rect']
-    angle = card['angle']
-    image = card['card'].image
-    card_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-    card_surface.fill((0, 0, 0, 0))  # Transparent fill
-    card_surface.blit(image, (1, 1))
-    pygame.draw.rect(card_surface, BLACK, card_surface.get_rect(), 1)
-    rotated_card = pygame.transform.rotate(card_surface, angle)
-    rotated_rect = rotated_card.get_rect(center=rect.center)
-    screen.blit(rotated_card, rotated_rect.topleft)
-
-def get_arc_position_and_angle(start_pos, end_pos, start_angle, end_angle, progress, arc_height):
-    x = start_pos[0] + (end_pos[0] - start_pos[0]) * progress
-    mid_x = (start_pos[0] + end_pos[0]) / 2
-    a = -4 * arc_height / ((start_pos[0] - end_pos[0]) ** 2)
-    y = a * (x - mid_x) ** 2 + min(start_pos[1], end_pos[1]) - arc_height
-    angle = start_angle + (end_angle - start_angle) * progress
-    return (x, y), angle
-
 def draw_card_from_player_deck(deck):
     global moving_card, moving_target_pos, target_angle, arc_progress
     if len(player_hand_cards) < MAX_HAND_CARDS:
@@ -187,7 +72,7 @@ def draw_card_from_player_deck(deck):
             moving_card = {'rect': pygame.Rect(PLAYER_DECK_POSITION_X, PLAYER_DECK_POSITION_Y, DECK_CARD_WIDTH, DECK_CARD_HEIGHT), 'angle': 0, 'card': drawn_card}
             new_card = {'rect': pygame.Rect(0, 0, DECK_CARD_WIDTH, DECK_CARD_HEIGHT), 'angle': 0, 'card': drawn_card}
             player_hand_cards.append(new_card)
-            update_player_hand_positions()
+            update_hand_positions(player_hand_cards, PLAYER_HAND_POSITION_Y, original_player_hand_positions)
             moving_target_pos = new_card['rect'].center
             target_angle = new_card['angle']
             player_hand_cards.pop()
@@ -201,7 +86,7 @@ def draw_card_from_ai_deck(deck):
             ai_moving_card = {'rect': pygame.Rect(AI_DECK_POSITION_X, AI_DECK_POSITION_Y, DECK_CARD_WIDTH, DECK_CARD_HEIGHT), 'angle': 0, 'card': drawn_card}
             new_card = {'rect': pygame.Rect(0, 0, DECK_CARD_WIDTH, DECK_CARD_HEIGHT), 'angle': 0, 'card': drawn_card}
             ai_hand_cards.append(new_card)
-            update_ai_hand_positions()
+            update_hand_positions(ai_hand_cards, AI_HAND_POSITION_Y, original_ai_hand_positions)
             ai_moving_target_pos = new_card['rect'].center
             ai_target_angle = new_card['angle']
             ai_hand_cards.pop()
@@ -270,7 +155,7 @@ while running:
                             if board_values[index]['player'] >= dragging_card['card'].placement_cost:
                                 place_card_on_board(dragging_card['card'], row, col, player=True)
                                 player_hand_cards.remove(dragging_card)
-                                update_player_hand_positions()
+                                update_hand_positions(player_hand_cards, PLAYER_HAND_POSITION_Y, original_player_hand_positions)
                                 valid_placement = True
                                 break
                 if not valid_placement:
@@ -347,7 +232,7 @@ while running:
             moving_card['rect'].center = moving_target_pos
             moving_card['angle'] = target_angle
             player_hand_cards.append(moving_card)
-            update_player_hand_positions()
+            update_hand_positions(player_hand_cards, PLAYER_HAND_POSITION_Y, original_player_hand_positions)
             moving_card = None
             if auto_drawing and initial_draw_count > 1:
                 initial_draw_count -= 1
@@ -370,7 +255,7 @@ while running:
             ai_moving_card['rect'].center = ai_moving_target_pos
             ai_moving_card['angle'] = ai_target_angle
             ai_hand_cards.append(ai_moving_card)
-            update_ai_hand_positions()
+            update_hand_positions(ai_hand_cards, AI_HAND_POSITION_Y, original_ai_hand_positions)
             ai_moving_card = None
             if ai_auto_drawing and ai_initial_draw_count > 1:
                 ai_initial_draw_count -= 1
