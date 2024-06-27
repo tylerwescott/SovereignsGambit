@@ -51,6 +51,7 @@ rogue_image = pygame.transform.scale(rogue_image, (RECT_WIDTH - 2, RECT_HEIGHT -
 
 # Font
 font = pygame.font.SysFont(None, 55)
+small_font = pygame.font.SysFont(None, 25)
 
 # Player and AI values
 player_value = 0
@@ -162,15 +163,31 @@ def draw_card_from_deck(deck):
             hand_cards.pop()
             arc_progress = 0
 
-def place_card_pawns(card, base_row, base_col):
+def place_card_pawns(card, base_row, base_col, player):
     for placement in card.pawn_placement:
         row_offset, col_offset = placement
         new_row = base_row + row_offset
         new_col = base_col + col_offset
         if 0 <= new_row < BOARD_ROWS and 1 <= new_col <= 5:  # Ensure placement is within columns 1 to 5
             index = new_row * BOARD_COLS + new_col
-            board_values[index]['player'] += 1
-            board_values[index]['image'] = green_pawn_image
+            if player:
+                board_values[index]['player'] += 1
+                board_values[index]['ai'] = 0  # Zero out AI's pawn count
+            else:
+                board_values[index]['ai'] += 1
+                board_values[index]['player'] = 0  # Zero out player's pawn count
+            board_values[index]['image'] = green_pawn_image if player else red_pawn_image
+
+def place_card_on_board(card, row, col, player=True):
+    index = row * BOARD_COLS + col
+    if player:
+        board_values[index]['player'] -= card.placement_cost
+        board_values[index]['ai'] = 0
+    else:
+        board_values[index]['ai'] -= card.placement_cost
+        board_values[index]['player'] = 0
+    board_values[index]['image'] = card.image
+    place_card_pawns(card, row, col, player)
 
 # Initiate drawing the first card
 draw_card_from_deck(player_deck)
@@ -204,9 +221,7 @@ while running:
                         index = row * BOARD_COLS + col
                         if space.collidepoint(mouse_x, mouse_y) and 1 <= col <= 5:
                             if board_values[index]['player'] >= dragging_card['card'].placement_cost:
-                                board_values[index]['player'] -= dragging_card['card'].placement_cost
-                                board_values[index]['image'] = dragging_card['card'].image
-                                place_card_pawns(dragging_card['card'], row, col)
+                                place_card_on_board(dragging_card['card'], row, col, player=True)
                                 hand_cards.remove(dragging_card)
                                 update_hand_positions()
                                 valid_placement = True
@@ -242,6 +257,15 @@ while running:
                     screen.blit(green_pawn_image, (space_x + 1, space_y + 1))
                 elif col == 5:
                     screen.blit(red_pawn_image, (space_x + 1, space_y + 1))
+
+            # Draw pawn counts for player and AI
+            if 1 <= col <= 5:
+                player_pawn_count = board_values[index]['player']
+                ai_pawn_count = board_values[index]['ai']
+                player_pawn_text = small_font.render(f'P: {player_pawn_count}', True, BLACK)
+                ai_pawn_text = small_font.render(f'A: {ai_pawn_count}', True, BLACK)
+                screen.blit(player_pawn_text, (space_x + 5, space_y + 5))
+                screen.blit(ai_pawn_text, (space_x + 5, space_y + 25))
 
     for i in range(5):
         card_x = DECK_POSITION_X + i * 2
