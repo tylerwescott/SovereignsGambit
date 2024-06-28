@@ -53,7 +53,7 @@ def place_card_pawns(card, base_row, base_col, player, board_values, green_pawn_
                     board_values[index]['image'] = red_pawn_image
                 print(f"Pawn placed at ({new_row}, {new_col}). Player: {board_values[index]['player']}, AI: {board_values[index]['ai']}")
 
-def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image, red_pawn_image, draw_card_from_ai_deck, place_card_on_board, original_ai_hand_positions, centered_margin_x, centered_margin_y, small_font, player_hand_cards, original_player_hand_positions, player_deck_count, font):
+def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image, red_pawn_image, draw_card_from_ai_deck, place_card_on_board, original_ai_hand_positions, centered_margin_x, centered_margin_y, small_font, player_hand_cards, original_player_hand_positions, player_deck_count, player_hand_count, font):
     for card in ai_hand_cards:
         for row in range(BOARD_ROWS):
             for col in range(BOARD_COLS):
@@ -64,27 +64,38 @@ def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image
 
                     start_pos = card['rect'].center
                     end_pos = ((centered_margin_x + col * RECT_WIDTH) + RECT_WIDTH // 2, (centered_margin_y + row * RECT_HEIGHT) + RECT_HEIGHT // 2)
-                    angle = card['angle']
+                    start_angle = card['angle']
+                    end_angle = 0  # Set the angle to 0 when placing on the board
 
                     # Pass additional parameters to animate_card_to_board
-                    animate_card_to_board(screen, card, start_pos, end_pos, angle, 1000, centered_margin_x, centered_margin_y, board_values, green_pawn_image, red_pawn_image, small_font, ai_hand_cards, ai_deck.cards_left(), original_ai_hand_positions, len(ai_hand_cards), player_hand_cards, player_deck_count, original_player_hand_positions, len(player_hand_cards), font)
+                    animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_angle, 1000, centered_margin_x, centered_margin_y, board_values, green_pawn_image, red_pawn_image, small_font, ai_hand_cards, ai_deck.cards_left(), original_ai_hand_positions, len(ai_hand_cards), player_hand_cards, player_deck_count, original_player_hand_positions, player_hand_count, font, row, col)
 
                     place_card_on_board(card['card'], row, col, player=False)
                     return
 
     draw_card_from_ai_deck(ai_deck)
 
-def animate_card_to_board(screen, card, start_pos, end_pos, angle, duration, centered_margin_x, centered_margin_y,
+def animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_angle, duration, centered_margin_x,
+                          centered_margin_y,
                           board_values, green_pawn_image, red_pawn_image, small_font, ai_hand_cards, ai_deck_count,
                           original_ai_hand_positions, ai_hand_count, player_hand_cards, player_deck_count,
-                          original_player_hand_positions, player_hand_count, font):
+                          original_player_hand_positions, player_hand_count, font, target_row, target_col):
     start_time = pygame.time.get_ticks()
+    card_width, card_height = DECK_CARD_WIDTH, DECK_CARD_HEIGHT
+    card_center_offset = (card_width // 2, card_height // 2)
+
     while pygame.time.get_ticks() - start_time < duration:
         elapsed = pygame.time.get_ticks() - start_time
         progress = elapsed / duration
 
         current_x = start_pos[0] + (end_pos[0] - start_pos[0]) * progress
         current_y = start_pos[1] + (end_pos[1] - start_pos[1]) * progress
+        current_angle = start_angle + (end_angle - start_angle) * progress
+
+        # Debug: Print current positions and angles
+        print(
+            f"Progress: {progress:.2f}, Current Pos: ({current_x:.2f}, {current_y:.2f}), Target Pos: {end_pos}, Current Angle: {current_angle:.2f}, Target Angle: {end_angle:.2f}")
+        print(f"Moving to Board Space - Row: {target_row}, Col: {target_col}, Position: ({end_pos[0]}, {end_pos[1]})")
 
         screen.fill(WHITE)
 
@@ -112,6 +123,10 @@ def animate_card_to_board(screen, card, start_pos, end_pos, angle, duration, cen
                     ai_pawn_text = small_font.render(f'A: {ai_pawn_count}', True, BLACK)
                     screen.blit(player_pawn_text, (space_x + 5, space_y + 5))
                     screen.blit(ai_pawn_text, (space_x + 5, space_y + 25))
+
+                # Debug: Draw target position markers
+                if row == target_row and col == target_col:
+                    pygame.draw.circle(screen, (0, 0, 255), (space_x + RECT_WIDTH // 2, space_y + RECT_HEIGHT // 2), 5)
 
         # Draw the player's hand
         for player_card in player_hand_cards:
@@ -146,12 +161,22 @@ def animate_card_to_board(screen, card, start_pos, end_pos, angle, duration, cen
         screen.blit(ai_deck_count_text, (10, 190))
 
         # Draw the moving card
+        moving_card_rect = pygame.Rect(current_x - card_center_offset[0], current_y - card_center_offset[1], card_width,
+                                       card_height)
         draw_rotated_card(screen, {
-            'rect': pygame.Rect(current_x, current_y, DECK_CARD_WIDTH, DECK_CARD_HEIGHT),
-            'angle': angle,
+            'rect': moving_card_rect,
+            'angle': current_angle,
             'card': card['card']
         })
+        # Debug: Draw current position markers for the card
+        pygame.draw.circle(screen, (255, 0, 0), (int(current_x), int(current_y)), 5)
+        pygame.draw.rect(screen, (255, 0, 0), moving_card_rect, 1)
 
         pygame.display.flip()
 
     card['rect'].center = end_pos
+    card['angle'] = end_angle
+
+    # Debug: Draw final position marker
+    pygame.draw.circle(screen, (255, 0, 0), end_pos, 5)
+    pygame.display.flip()
