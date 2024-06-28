@@ -9,17 +9,18 @@ from card import Card
 pygame.init()
 
 # Load images
-green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image = load_images()
+green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image = load_images()  # Update to load archer_image
 
 # Create card instances
 foot_soldier_card = Card("Foot Soldier", 1, foot_soldier_image, [(0, 1)], 2)
 apprentice_card = Card("Apprentice", 1, apprentice_image, [(0, 2)], 1)
 rogue_card = Card("Rogue", 1, rogue_image, [(0, 3)], 1)
-spearman_card = Card("Spearman", 1, spearman_image, [(0, 1), (0, 2)], 2)
+spearman_card = Card("Spearman", 2, spearman_image, [(0, 1), (0, 2)], 2)
+archer_card = Card("Archer", 2, archer_image, [(0, 2), (0, 3)], 2)  # Add archer card
 
 # Initialize player and AI decks with 30 cards each
-player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card] * 8)
-ai_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card] * 8)
+player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card] * 6)
+ai_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card] * 6)
 
 # Player hand cards and other variables
 player_hand_cards = []
@@ -158,7 +159,6 @@ while running:
                                 turn_end = True
                                 break
                 if not valid_placement:
-                    # Snap back to original position
                     idx = player_hand_cards.index(dragging_card)
                     dragging_card['rect'].topleft = original_player_hand_positions[idx]
                     dragging_card['angle'] = -CARD_TILT_ANGLE * (idx - (len(player_hand_cards) - 1) / 2)

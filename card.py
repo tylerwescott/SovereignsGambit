@@ -1,3 +1,5 @@
+import pygame
+
 class Card:
     def __init__(self, name, placement_cost, image, pawn_placement, strength):
         self.name = name
