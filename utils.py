@@ -5,10 +5,28 @@ def draw_rotated_card(screen, card):
     rect = card['rect']
     angle = card['angle']
     image = card['card'].image
+    strength = card['card'].strength
+    placement_cost = card['card'].placement_cost
     card_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
     card_surface.fill((0, 0, 0, 0))  # Transparent fill
     card_surface.blit(image, (1, 1))
     pygame.draw.rect(card_surface, BLACK, card_surface.get_rect(), 1)
+
+    # Render the strength text in the bottom left corner
+    font = pygame.font.SysFont(None, 25)
+    strength_text = font.render(str(strength), True, BLACK)
+    strength_text = pygame.transform.rotate(strength_text, angle)
+    strength_rect = strength_text.get_rect()
+    strength_rect.bottomleft = (5, rect.height - 5)
+    card_surface.blit(strength_text, strength_rect.topleft)
+
+    # Render the placement cost text in the top left corner
+    placement_cost_text = font.render(str(placement_cost), True, BLACK)
+    placement_cost_text = pygame.transform.rotate(placement_cost_text, angle)
+    placement_cost_rect = placement_cost_text.get_rect()
+    placement_cost_rect.topleft = (5, 5)
+    card_surface.blit(placement_cost_text, placement_cost_rect.topleft)
+
     rotated_card = pygame.transform.rotate(card_surface, angle)
     rotated_rect = rotated_card.get_rect(center=rect.center)
     screen.blit(rotated_card, rotated_rect.topleft)

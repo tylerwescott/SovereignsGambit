@@ -227,6 +227,9 @@ while running:
     ai_deck_count_text = font.render(f'AI Deck: {ai_deck.cards_left()}', True, BLACK)
     screen.blit(ai_deck_count_text, (10, 190))
 
+    for card in player_hand_cards:
+        final_top_left = draw_rotated_card(screen, card)
+
     if moving_card is not None:
         arc_progress += ANIMATION_SPEED
         if arc_progress >= 1:
@@ -254,9 +257,11 @@ while running:
             current_top_left = draw_rotated_card(screen, moving_card)
             print(f"Top left position while moving: {current_top_left}")
 
-    for card in player_hand_cards:
-        final_top_left = draw_rotated_card(screen, card)
+    # Draw the AI's hand
+    for card in ai_hand_cards:
+        draw_rotated_card(screen, card)
 
+    # Draw the AI's moving card after drawing the AI hand cards
     if ai_moving_card is not None:
         ai_arc_progress += ANIMATION_SPEED
         if ai_arc_progress >= 1:
@@ -278,9 +283,6 @@ while running:
 
         if ai_moving_card:
             draw_rotated_card(screen, ai_moving_card)
-
-    for card in ai_hand_cards:
-        draw_rotated_card(screen, card)
 
     if dragging_card:
         draw_rotated_card(screen, dragging_card)
