@@ -8,7 +8,8 @@ def load_images():
     APPRENTICE_IMAGE_PATH = 'images/apprentice.jpg'
     ROGUE_IMAGE_PATH = 'images/rogue.jpg'
     SPEARMAN_IMAGE_PATH = 'images/spearman.jpg'
-    ARCHER_IMAGE_PATH = 'images/archer.jpg'  # Add this line
+    ARCHER_IMAGE_PATH = 'images/archer.jpg'
+    SHIELDBEARER_IMAGE_PATH = 'images/shieldbearer.jpg'
 
     green_pawn_image = pygame.image.load(GREEN_PAWN_IMAGE_PATH)
     green_pawn_image = pygame.transform.scale(green_pawn_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
@@ -23,6 +24,8 @@ def load_images():
     spearman_image = pygame.image.load(SPEARMAN_IMAGE_PATH)
     spearman_image = pygame.transform.scale(spearman_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
     archer_image = pygame.image.load(ARCHER_IMAGE_PATH)
-    archer_image = pygame.transform.scale(archer_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))  # Add this line
+    archer_image = pygame.transform.scale(archer_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
+    shieldbearer_image = pygame.image.load(SHIELDBEARER_IMAGE_PATH)
+    shieldbearer_image = pygame.transform.scale(shieldbearer_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
 
-    return green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image
+    return green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image

@@ -147,8 +147,8 @@ def animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_ang
                     ai_pawn_count = board_values[index]['ai']
                     player_pawn_text = small_font.render(f'P: {player_pawn_count}', True, BLACK)
                     ai_pawn_text = small_font.render(f'A: {ai_pawn_count}', True, BLACK)
-                    screen.blit(player_pawn_text, (space_x + 5, space_y + 5))
-                    screen.blit(ai_pawn_text, (space_x + 5, space_y + 25))
+                    screen.blit(player_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 - player_pawn_text.get_height() // 2))
+                    screen.blit(ai_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 + ai_pawn_text.get_height() // 2))
 
                 # Debug: Draw target position markers
                 if row == target_row and col == target_col:

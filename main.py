@@ -9,7 +9,7 @@ from card import Card
 pygame.init()
 
 # Load images
-green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image = load_images()  # Update to load archer_image
+green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image = load_images()
 
 # Create card instances
 foot_soldier_card = Card("Foot Soldier", 1, foot_soldier_image, [(0, 1)], 2)
@@ -17,10 +17,11 @@ apprentice_card = Card("Apprentice", 1, apprentice_image, [(0, 2)], 1)
 rogue_card = Card("Rogue", 1, rogue_image, [(0, 3)], 1)
 spearman_card = Card("Spearman", 2, spearman_image, [(0, 1), (0, 2)], 2)
 archer_card = Card("Archer", 2, archer_image, [(0, 2), (0, 3)], 2)  # Add archer card
+shieldbearer_card = Card("Shieldbearer", 1, shieldbearer_image, [(-1, 0), (1, 0)], 1)
 
 # Initialize player and AI decks with 30 cards each
-player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card] * 6)
-ai_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card] * 6)
+player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card] * 5)
+ai_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card] * 5)
 
 # Player hand cards and other variables
 player_hand_cards = []
@@ -197,8 +198,9 @@ while running:
                 ai_pawn_count = board_values[index]['ai']
                 player_pawn_text = small_font.render(f'P: {player_pawn_count}', True, BLACK)
                 ai_pawn_text = small_font.render(f'A: {ai_pawn_count}', True, BLACK)
-                screen.blit(player_pawn_text, (space_x + 5, space_y + 5))
-                screen.blit(ai_pawn_text, (space_x + 5, space_y + 25))
+                screen.blit(player_pawn_text,
+                            (space_x + 5, space_y + RECT_HEIGHT // 2 - player_pawn_text.get_height() // 2))
+                screen.blit(ai_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 + ai_pawn_text.get_height() // 2))
 
     for i in range(5):
         card_x = PLAYER_DECK_POSITION_X + i * 2
