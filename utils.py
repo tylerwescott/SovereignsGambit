@@ -13,6 +13,13 @@ def draw_rotated_card(screen, card):
     rotated_rect = rotated_card.get_rect(center=rect.center)
     screen.blit(rotated_card, rotated_rect.topleft)
 
+    # Calculate the position of the top left corner of the rotated image
+    top_left_offset = pygame.math.Vector2(-rect.width // 2, -rect.height // 2).rotate(-angle)
+    top_left_pos = pygame.math.Vector2(rect.center) + top_left_offset
+
+    pygame.draw.circle(screen, (255, 0, 0), top_left_pos, 5)  # Red dot at top left
+    return top_left_pos
+
 def get_arc_position_and_angle(start_pos, end_pos, start_angle, end_angle, progress, arc_height):
     x = start_pos[0] + (end_pos[0] - start_pos[0]) * progress
     mid_x = (start_pos[0] + end_pos[0]) / 2

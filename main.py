@@ -236,6 +236,8 @@ while running:
             update_hand_positions(player_hand_cards, PLAYER_HAND_POSITION_Y, original_player_hand_positions)
             print(
                 f"Card {moving_card['card'].name} reached final position: {moving_card['rect'].center}, Angle: {moving_card['angle']}")
+            final_top_left = draw_rotated_card(screen, moving_card)
+            print(f"Top left position: {final_top_left}")
             moving_card = None
             if auto_drawing and initial_draw_count > 1:
                 initial_draw_count -= 1
@@ -249,15 +251,11 @@ while running:
             )
             print(
                 f"Moving card: {moving_card['card'].name}, Position: {moving_card['rect'].center}, Angle: {moving_card['angle']}")
-
-        if moving_card:
-            draw_rotated_card(screen, moving_card)
-            pygame.draw.circle(screen, (255, 0, 0), moving_card['rect'].center, 5)
+            current_top_left = draw_rotated_card(screen, moving_card)
+            print(f"Top left position while moving: {current_top_left}")
 
     for card in player_hand_cards:
-        draw_rotated_card(screen, card)
-        # Draw a red dot at the position of each card in the player's hand
-        pygame.draw.circle(screen, (255, 0, 0), card['rect'].center, 5)
+        final_top_left = draw_rotated_card(screen, card)
 
     if ai_moving_card is not None:
         ai_arc_progress += ANIMATION_SPEED
@@ -274,7 +272,8 @@ while running:
                 ai_auto_drawing = False
         else:
             ai_moving_card['rect'].center, ai_moving_card['angle'] = get_arc_position_and_angle(
-                (AI_DECK_POSITION_X, AI_DECK_POSITION_Y), ai_moving_target_pos, 0, ai_target_angle, ai_arc_progress, ARC_HEIGHT
+                (AI_DECK_POSITION_X, AI_DECK_POSITION_Y), ai_moving_target_pos, 0, ai_target_angle, ai_arc_progress,
+                ARC_HEIGHT
             )
 
         if ai_moving_card:
