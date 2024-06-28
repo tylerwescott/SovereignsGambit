@@ -101,6 +101,76 @@ def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image
 
     draw_card_from_ai_deck(ai_deck)
 
+def draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards, ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font, green_pawn_image, red_pawn_image, target_row=None, target_col=None):
+    screen.fill(WHITE)
+
+    # Draw the board and pawns
+    for row in range(BOARD_ROWS):
+        for col in range(BOARD_COLS):
+            space_x = centered_margin_x + col * RECT_WIDTH
+            space_y = centered_margin_y + row * RECT_HEIGHT
+            space = pygame.Rect(space_x, space_y, RECT_WIDTH, RECT_HEIGHT)
+            pygame.draw.rect(screen, BLACK, space, 1)
+
+            index = row * BOARD_COLS + col
+            if board_values[index]['image'] is not None:
+                screen.blit(board_values[index]['image'], (space_x + 1, space_y + 1))
+
+                # Draw the strength text if the card is present
+                if board_values[index]['card'] is not None:
+                    strength_text = small_font.render(str(board_values[index]['card'].strength), True, BLACK)
+                    strength_rect = strength_text.get_rect()
+                    strength_rect.bottomleft = (space_x + 5, space_y + RECT_HEIGHT - 5)
+                    screen.blit(strength_text, strength_rect.topleft)
+            else:
+                if col == 1:
+                    screen.blit(green_pawn_image, (space_x + 1, space_y + 1))
+                elif col == 5:
+                    screen.blit(red_pawn_image, (space_x + 1, space_y + 1))
+
+            if 1 <= col <= 5:
+                player_pawn_count = board_values[index]['player']
+                ai_pawn_count = board_values[index]['ai']
+                player_pawn_text = small_font.render(f'P: {player_pawn_count}', True, BLACK)
+                ai_pawn_text = small_font.render(f'A: {ai_pawn_count}', True, BLACK)
+                screen.blit(player_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 - player_pawn_text.get_height() // 2))
+                screen.blit(ai_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 + ai_pawn_text.get_height() // 2))
+
+            if target_row is not None and target_col is not None and row == target_row and col == target_col:
+                pygame.draw.circle(screen, (0, 0, 255), (space_x + RECT_WIDTH // 2, space_y + RECT_HEIGHT // 2), 5)
+
+    # Draw the player's hand
+    for player_card in player_hand_cards:
+        draw_rotated_card(screen, player_card)
+
+    # Draw the AI's hand
+    for ai_card in ai_hand_cards:
+        draw_rotated_card(screen, ai_card)
+
+    # Draw the player's deck and count
+    for i in range(5):
+        card_x = PLAYER_DECK_POSITION_X + i * 2
+        card_y = PLAYER_DECK_POSITION_Y - i * 2
+        card_rect = pygame.Rect(card_x, card_y, DECK_CARD_WIDTH, DECK_CARD_HEIGHT)
+        pygame.draw.rect(screen, BLACK, card_rect, 1)
+
+    player_hand_count_text = small_font.render(f'Hand: {player_hand_count}', True, BLACK)
+    screen.blit(player_hand_count_text, (10, 10))
+    player_deck_count_text = small_font.render(f'Deck: {player_deck_count}', True, BLACK)
+    screen.blit(player_deck_count_text, (10, 70))
+
+    # Draw the AI's deck and count
+    for i in range(5):
+        card_x = AI_DECK_POSITION_X + i * 2
+        card_y = AI_DECK_POSITION_Y - i * 2
+        card_rect = pygame.Rect(card_x, card_y, DECK_CARD_WIDTH, DECK_CARD_HEIGHT)
+        pygame.draw.rect(screen, BLACK, card_rect, 1)
+
+    ai_hand_count_text = small_font.render(f'AI Hand: {ai_hand_count}', True, BLACK)
+    screen.blit(ai_hand_count_text, (10, 130))
+    ai_deck_count_text = small_font.render(f'AI Deck: {ai_deck_count}', True, BLACK)
+    screen.blit(ai_deck_count_text, (10, 190))
+
 def animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_angle, duration, centered_margin_x,
                           centered_margin_y,
                           board_values, green_pawn_image, red_pawn_image, small_font, ai_hand_cards, ai_deck_count,
@@ -123,68 +193,7 @@ def animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_ang
             f"Progress: {progress:.2f}, Current Pos: ({current_x:.2f}, {current_y:.2f}), Target Pos: {end_pos}, Current Angle: {current_angle:.2f}, Target Angle: {end_angle:.2f}")
         print(f"Moving to Board Space - Row: {target_row}, Col: {target_col}, Position: ({end_pos[0]}, {end_pos[1]})")
 
-        screen.fill(WHITE)
-
-        # Draw the board and pawns
-        for row in range(BOARD_ROWS):
-            for col in range(BOARD_COLS):
-                space_x = centered_margin_x + col * RECT_WIDTH
-                space_y = centered_margin_y + row * RECT_HEIGHT
-                space = pygame.Rect(space_x, space_y, RECT_WIDTH, RECT_HEIGHT)
-                pygame.draw.rect(screen, BLACK, space, 1)
-
-                index = row * BOARD_COLS + col
-                if board_values[index]['image'] is not None:
-                    screen.blit(board_values[index]['image'], (space_x + 1, space_y + 1))
-                else:
-                    if col == 1:
-                        screen.blit(green_pawn_image, (space_x + 1, space_y + 1))
-                    elif col == 5:
-                        screen.blit(red_pawn_image, (space_x + 1, space_y + 1))
-
-                if 1 <= col <= 5:
-                    player_pawn_count = board_values[index]['player']
-                    ai_pawn_count = board_values[index]['ai']
-                    player_pawn_text = small_font.render(f'P: {player_pawn_count}', True, BLACK)
-                    ai_pawn_text = small_font.render(f'A: {ai_pawn_count}', True, BLACK)
-                    screen.blit(player_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 - player_pawn_text.get_height() // 2))
-                    screen.blit(ai_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 + ai_pawn_text.get_height() // 2))
-
-                # Debug: Draw target position markers
-                if row == target_row and col == target_col:
-                    pygame.draw.circle(screen, (0, 0, 255), (space_x + RECT_WIDTH // 2, space_y + RECT_HEIGHT // 2), 5)
-
-        # Draw the player's hand
-        for player_card in player_hand_cards:
-            draw_rotated_card(screen, player_card)
-
-        # Draw the AI's hand
-        for ai_card in ai_hand_cards:
-            draw_rotated_card(screen, ai_card)
-
-        # Draw the player's deck and count
-        for i in range(5):
-            card_x = PLAYER_DECK_POSITION_X + i * 2
-            card_y = PLAYER_DECK_POSITION_Y - i * 2
-            card_rect = pygame.Rect(card_x, card_y, DECK_CARD_WIDTH, DECK_CARD_HEIGHT)
-            pygame.draw.rect(screen, BLACK, card_rect, 1)
-
-        player_hand_count_text = font.render(f'Hand: {player_hand_count}', True, BLACK)
-        screen.blit(player_hand_count_text, (10, 10))
-        player_deck_count_text = font.render(f'Deck: {player_deck_count}', True, BLACK)
-        screen.blit(player_deck_count_text, (10, 70))
-
-        # Draw the AI's deck and count
-        for i in range(5):
-            card_x = AI_DECK_POSITION_X + i * 2
-            card_y = AI_DECK_POSITION_Y - i * 2
-            card_rect = pygame.Rect(card_x, card_y, DECK_CARD_WIDTH, DECK_CARD_HEIGHT)
-            pygame.draw.rect(screen, BLACK, card_rect, 1)
-
-        ai_hand_count_text = font.render(f'AI Hand: {ai_hand_count}', True, BLACK)
-        screen.blit(ai_hand_count_text, (10, 130))
-        ai_deck_count_text = font.render(f'AI Deck: {ai_deck_count}', True, BLACK)
-        screen.blit(ai_deck_count_text, (10, 190))
+        draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards, ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font, green_pawn_image, red_pawn_image, target_row, target_col)
 
         # Draw the moving card
         moving_card_rect = pygame.Rect(current_x - card_center_offset[0], current_y - card_center_offset[1], card_width,
