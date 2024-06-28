@@ -82,6 +82,7 @@ def draw_card_from_player_deck(deck):
             target_angle = new_card['angle']
             player_hand_cards.pop()
             arc_progress = 0
+            print(f"Drawing card: {drawn_card.name} to hand. Target position: {moving_target_pos}, Target angle: {target_angle}")
 
 def draw_card_from_ai_deck(deck):
     global ai_moving_card, ai_moving_target_pos, ai_target_angle, ai_arc_progress
@@ -233,6 +234,8 @@ while running:
             moving_card['angle'] = target_angle
             player_hand_cards.append(moving_card)
             update_hand_positions(player_hand_cards, PLAYER_HAND_POSITION_Y, original_player_hand_positions)
+            print(
+                f"Card {moving_card['card'].name} reached final position: {moving_card['rect'].center}, Angle: {moving_card['angle']}")
             moving_card = None
             if auto_drawing and initial_draw_count > 1:
                 initial_draw_count -= 1
@@ -241,13 +244,20 @@ while running:
                 auto_drawing = False
         else:
             moving_card['rect'].center, moving_card['angle'] = get_arc_position_and_angle(
-                (PLAYER_DECK_POSITION_X, PLAYER_DECK_POSITION_Y), moving_target_pos, 0, target_angle, arc_progress, ARC_HEIGHT
+                (PLAYER_DECK_POSITION_X, PLAYER_DECK_POSITION_Y), moving_target_pos, 0, target_angle, arc_progress,
+                ARC_HEIGHT
             )
+            print(
+                f"Moving card: {moving_card['card'].name}, Position: {moving_card['rect'].center}, Angle: {moving_card['angle']}")
+
         if moving_card:
             draw_rotated_card(screen, moving_card)
+            pygame.draw.circle(screen, (255, 0, 0), moving_card['rect'].center, 5)
 
     for card in player_hand_cards:
         draw_rotated_card(screen, card)
+        # Draw a red dot at the position of each card in the player's hand
+        pygame.draw.circle(screen, (255, 0, 0), card['rect'].center, 5)
 
     if ai_moving_card is not None:
         ai_arc_progress += ANIMATION_SPEED
@@ -266,6 +276,7 @@ while running:
             ai_moving_card['rect'].center, ai_moving_card['angle'] = get_arc_position_and_angle(
                 (AI_DECK_POSITION_X, AI_DECK_POSITION_Y), ai_moving_target_pos, 0, ai_target_angle, ai_arc_progress, ARC_HEIGHT
             )
+
         if ai_moving_card:
             draw_rotated_card(screen, ai_moving_card)
 

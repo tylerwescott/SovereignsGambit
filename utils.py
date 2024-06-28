@@ -18,6 +18,7 @@ def get_arc_position_and_angle(start_pos, end_pos, start_angle, end_angle, progr
     mid_x = (start_pos[0] + end_pos[0]) / 2
     a = -4 * arc_height / ((start_pos[0] - end_pos[0]) ** 2)
     y = a * (x - mid_x) ** 2 + min(start_pos[1], end_pos[1]) - arc_height
+    y = y + (end_pos[1] - y) * progress  # Smooth out the y position to reach the end smoothly
     angle = start_angle + (end_angle - start_angle) * progress
     return (x, y), angle
 
