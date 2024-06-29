@@ -27,6 +27,23 @@ def draw_rotated_card(screen, card):
     placement_cost_rect.topleft = (5, 5)
     card_surface.blit(placement_cost_text, placement_cost_rect.topleft)
 
+    # Draw the 5x5 grid at the bottom center of the card
+    grid_size = 10
+    grid_center_x = rect.width // 2
+    grid_center_y = rect.height - grid_size * 2.5  # Adjust as needed to position the grid at the bottom
+
+    for r in range(-2, 3):
+        for c in range(-2, 3):
+            color = (255, 255, 0) if (r, c) in card['card'].pawn_placement else (200, 200, 200)
+            grid_rect = pygame.Rect(
+                grid_center_x + c * grid_size - grid_size // 2,
+                grid_center_y + r * grid_size - grid_size // 2,
+                grid_size,
+                grid_size
+            )
+            pygame.draw.rect(card_surface, color, grid_rect)
+            pygame.draw.rect(card_surface, BLACK, grid_rect, 1)  # Black outline
+
     rotated_card = pygame.transform.rotate(card_surface, angle)
     rotated_rect = rotated_card.get_rect(center=rect.center)
     screen.blit(rotated_card, rotated_rect.topleft)
@@ -37,7 +54,6 @@ def draw_rotated_card(screen, card):
 
     pygame.draw.circle(screen, (255, 0, 0), top_left_pos, 5)  # Red dot at top left
     return top_left_pos
-
 
 def get_arc_position_and_angle(start_pos, end_pos, start_angle, end_angle, progress, arc_height):
     x = start_pos[0] + (end_pos[0] - start_pos[0]) * progress
