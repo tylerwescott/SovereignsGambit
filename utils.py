@@ -7,6 +7,9 @@ def draw_rotated_card(screen, card):
     image = card['card'].image
     strength = card['card'].strength
     placement_cost = card['card'].placement_cost
+    pawn_placement = card['card'].pawn_placement
+    power_up_positions = card['card'].power_up_positions
+
     card_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
     card_surface.fill((0, 0, 0, 0))  # Transparent fill
     card_surface.blit(image, (1, 1))
@@ -27,25 +30,32 @@ def draw_rotated_card(screen, card):
     placement_cost_rect.topleft = (5, 5)
     card_surface.blit(placement_cost_text, placement_cost_rect.topleft)
 
-    # Draw the 7x7 grid at the bottom center of the card
-    grid_size = 12  # Reduced to 80% of previous 15
-    grid_center_x = rect.width // 2
-    grid_center_y = rect.height - grid_size * 3.5  # Adjust as needed to position the grid at the bottom
+    # Draw the 7x7 grid to show pawn placement and power-up positions, resized to about one-third
+    grid_size = 7
+    original_cell_size = min(rect.width, rect.height) // grid_size
+    cell_size = int(original_cell_size * (1 / 3))  # Resize to one-third
+    grid_surface = pygame.Surface((cell_size * grid_size, cell_size * grid_size), pygame.SRCALPHA)
+    grid_surface.fill((0, 0, 0, 0))  # Transparent fill
 
-    for r in range(-3, 4):
-        for c in range(-3, 4):
-            if r == 0 and c == 0:
-                color = WHITE  # Center square
-            else:
-                color = (255, 255, 0) if (r, c) in card['card'].pawn_placement else (200, 200, 200)
-            grid_rect = pygame.Rect(
-                grid_center_x + c * grid_size - grid_size // 2,
-                grid_center_y + r * grid_size - grid_size // 2,
-                grid_size,
-                grid_size
-            )
-            pygame.draw.rect(card_surface, color, grid_rect)
-            pygame.draw.rect(card_surface, BLACK, grid_rect, 1)  # Black outline
+    for row in range(grid_size):
+        for col in range(grid_size):
+            cell_x = col * cell_size
+            cell_y = row * cell_size
+            if (row - grid_size // 2, col - grid_size // 2) in pawn_placement:
+                pygame.draw.rect(grid_surface, YELLOW, (cell_x, cell_y, cell_size, cell_size))
+            elif (row - grid_size // 2, col - grid_size // 2) in power_up_positions:
+                pygame.draw.rect(grid_surface, BLUE, (cell_x, cell_y, cell_size, cell_size))
+            pygame.draw.rect(grid_surface, BLACK, (cell_x, cell_y, cell_size, cell_size), 1)
+
+    # Draw the center cell in white
+    center_x = (grid_size // 2) * cell_size
+    center_y = (grid_size // 2) * cell_size
+    pygame.draw.rect(grid_surface, WHITE, (center_x, center_y, cell_size, cell_size))
+
+    rotated_grid = pygame.transform.rotate(grid_surface, angle)
+    grid_rect = rotated_grid.get_rect(center=(rect.width // 2, rect.height - cell_size * grid_size // 2))
+
+    card_surface.blit(rotated_grid, grid_rect.topleft)
 
     rotated_card = pygame.transform.rotate(card_surface, angle)
     rotated_rect = rotated_card.get_rect(center=rect.center)
@@ -67,7 +77,6 @@ def get_arc_position_and_angle(start_pos, end_pos, start_angle, end_angle, progr
     angle = start_angle + (end_angle - start_angle) * progress
     return (x, y), angle
 
-
 def update_hand_positions(hand_cards, hand_position_y, original_hand_positions):
     original_hand_positions.clear()
     if hand_cards:
@@ -78,7 +87,6 @@ def update_hand_positions(hand_cards, hand_position_y, original_hand_positions):
             card['rect'].topleft = pos
             card['angle'] = -CARD_TILT_ANGLE * (i - (len(hand_cards) - 1) / 2)
             original_hand_positions.append(pos)
-
 
 def place_card_pawns(card, base_row, base_col, player, board_values, green_pawn_image, red_pawn_image):
     for placement in card.pawn_placement:
@@ -99,14 +107,11 @@ def place_card_pawns(card, base_row, base_col, player, board_values, green_pawn_
                     board_values[index]['ai'] += 1
                     board_values[index]['player'] = 0  # Zero out player's pawn count
                     board_values[index]['image'] = red_pawn_image
-                print(
-                    f"Pawn placed at ({new_row}, {new_col}). Player: {board_values[index]['player']}, AI: {board_values[index]['ai']}")
+                print(f"Pawn placed at ({new_row}, {new_col}). Player: {board_values[index]['player']}, AI: {board_values[index]['ai']}")
 
-
-def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image, red_pawn_image,
-                  draw_card_from_ai_deck, place_card_on_board, original_ai_hand_positions, centered_margin_x,
-                  centered_margin_y, small_font, player_hand_cards, original_player_hand_positions, player_deck_count,
-                  player_hand_count, font):
+def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image, red_pawn_image, draw_card_from_ai_deck,
+                  place_card_on_board, original_ai_hand_positions, centered_margin_x, centered_margin_y, small_font,
+                  player_hand_cards, original_player_hand_positions, player_deck_count, player_hand_count, font):
     for card in ai_hand_cards:
         for row in range(BOARD_ROWS):
             for col in range(BOARD_COLS):
@@ -116,39 +121,25 @@ def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image
                     update_hand_positions(ai_hand_cards, AI_HAND_POSITION_Y, original_ai_hand_positions)
 
                     start_pos = card['rect'].center
-                    end_pos = ((centered_margin_x + col * RECT_WIDTH) + RECT_WIDTH // 2,
-                               (centered_margin_y + row * RECT_HEIGHT) + RECT_HEIGHT // 2)
+                    end_pos = ((centered_margin_x + col * RECT_WIDTH) + RECT_WIDTH // 2, (centered_margin_y + row * RECT_HEIGHT) + RECT_HEIGHT // 2)
                     start_angle = card['angle']
                     end_angle = 0  # Set the angle to 0 when placing on the board
 
-                    # Pass additional parameters to animate_card_to_board
-                    animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_angle, 1000,
-                                          centered_margin_x, centered_margin_y, board_values, green_pawn_image,
-                                          red_pawn_image, small_font, ai_hand_cards, ai_deck.cards_left(),
-                                          original_ai_hand_positions, len(ai_hand_cards), player_hand_cards,
-                                          player_deck_count, original_player_hand_positions, player_hand_count, font,
-                                          row, col)
+                    animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_angle, 1000, centered_margin_x, centered_margin_y,
+                                          board_values, green_pawn_image, red_pawn_image, small_font, ai_hand_cards, ai_deck.cards_left(),
+                                          original_ai_hand_positions, len(ai_hand_cards), player_hand_cards, player_deck_count,
+                                          original_player_hand_positions, player_hand_count, font)
 
                     place_card_on_board(card['card'], row, col, player=False)
                     return
 
     draw_card_from_ai_deck(ai_deck)
 
-def draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards, ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font, green_pawn_image, red_pawn_image, target_row=None, target_col=None):
+def draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards, ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font, green_pawn_image, red_pawn_image):
     screen.fill(WHITE)
 
     player_row_strengths = [0] * BOARD_ROWS
     ai_row_strengths = [0] * BOARD_ROWS
-
-    # Calculate row strengths for player and AI
-    for row in range(BOARD_ROWS):
-        for col in range(BOARD_COLS):
-            index = row * BOARD_COLS + col
-            if board_values[index]['card'] is not None:
-                if board_values[index]['owner'] == 'player':
-                    player_row_strengths[row] += board_values[index]['card'].strength
-                elif board_values[index]['owner'] == 'ai':
-                    ai_row_strengths[row] += board_values[index]['card'].strength
 
     # Draw the board and pawns
     for row in range(BOARD_ROWS):
@@ -164,10 +155,16 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
 
                 # Draw the strength text if the card is present
                 if board_values[index]['card'] is not None:
-                    strength_text = small_font.render(str(board_values[index]['card'].strength), True, BLACK)
+                    strength_text = small_font.render(str(board_values[index]['strength']), True, BLACK)
                     strength_rect = strength_text.get_rect()
                     strength_rect.bottomleft = (space_x + 5, space_y + RECT_HEIGHT - 5)
                     screen.blit(strength_text, strength_rect.topleft)
+
+                    # Update row strength totals
+                    if board_values[index]['owner'] == 'player':
+                        player_row_strengths[row] += board_values[index]['strength']
+                    elif board_values[index]['owner'] == 'ai':
+                        ai_row_strengths[row] += board_values[index]['strength']
             else:
                 if col == 1:
                     screen.blit(green_pawn_image, (space_x + 1, space_y + 1))
@@ -182,22 +179,26 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                 screen.blit(player_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 - player_pawn_text.get_height() // 2))
                 screen.blit(ai_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 + ai_pawn_text.get_height() // 2))
 
-            if target_row is not None and target_col is not None and row == target_row and col == target_col:
-                pygame.draw.circle(screen, (0, 0, 255), (space_x + RECT_WIDTH // 2, space_y + RECT_HEIGHT // 2), 5)
-
-    # Draw the strength totals in columns 0 and 6
+    # Draw the strength totals for each row in columns 0 and 6
     for row in range(BOARD_ROWS):
-        player_strength_symbol = "^" if player_row_strengths[row] > ai_row_strengths[row] else "v" if player_row_strengths[row] < ai_row_strengths[row] else "="
-        ai_strength_symbol = "^" if ai_row_strengths[row] > player_row_strengths[row] else "v" if ai_row_strengths[row] < player_row_strengths[row] else "="
+        player_strength_text = small_font.render(f'Strength ttl: {player_row_strengths[row]}', True, BLUE)
+        ai_strength_text = small_font.render(f'Strength ttl: {ai_row_strengths[row]}', True, RED)
 
-        player_strength_text = small_font.render(f'Strength ttl: {player_row_strengths[row]} {player_strength_symbol}', True, BLUE)
-        ai_strength_text = small_font.render(f'Strength ttl: {ai_row_strengths[row]} {ai_strength_symbol}', True, RED)
+        if player_row_strengths[row] > ai_row_strengths[row]:
+            player_strength_text = small_font.render(f'Strength ttl: {player_row_strengths[row]} ^', True, BLUE)
+            ai_strength_text = small_font.render(f'Strength ttl: {ai_row_strengths[row]} v', True, RED)
+        elif player_row_strengths[row] < ai_row_strengths[row]:
+            player_strength_text = small_font.render(f'Strength ttl: {player_row_strengths[row]} v', True, BLUE)
+            ai_strength_text = small_font.render(f'Strength ttl: {ai_row_strengths[row]} ^', True, RED)
+        else:
+            player_strength_text = small_font.render(f'Strength ttl: {player_row_strengths[row]} =', True, BLUE)
+            ai_strength_text = small_font.render(f'Strength ttl: {ai_row_strengths[row]} =', True, RED)
 
-        player_strength_rect = player_strength_text.get_rect(center=(centered_margin_x + RECT_WIDTH // 2, centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2))
-        ai_strength_rect = ai_strength_text.get_rect(center=(centered_margin_x + BOARD_WIDTH - RECT_WIDTH // 2, centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2))
+        player_strength_rect = player_strength_text.get_rect(center=(centered_margin_x - RECT_WIDTH // 2, centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2))
+        ai_strength_rect = ai_strength_text.get_rect(center=(centered_margin_x + BOARD_COLS * RECT_WIDTH + RECT_WIDTH // 2, centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2))
 
-        screen.blit(player_strength_text, player_strength_rect.topleft)
-        screen.blit(ai_strength_text, ai_strength_rect.topleft)
+        screen.blit(player_strength_text, player_strength_rect)
+        screen.blit(ai_strength_text, ai_strength_rect)
 
     # Draw the player's hand
     for player_card in player_hand_cards:
@@ -232,10 +233,9 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
     screen.blit(ai_deck_count_text, (10, 190))
 
 def animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_angle, duration, centered_margin_x,
-                          centered_margin_y,
-                          board_values, green_pawn_image, red_pawn_image, small_font, ai_hand_cards, ai_deck_count,
-                          original_ai_hand_positions, ai_hand_count, player_hand_cards, player_deck_count,
-                          original_player_hand_positions, player_hand_count, font, target_row, target_col):
+                          centered_margin_y, board_values, green_pawn_image, red_pawn_image, small_font, ai_hand_cards,
+                          ai_deck_count, original_ai_hand_positions, ai_hand_count, player_hand_cards, player_deck_count,
+                          original_player_hand_positions, player_hand_count, font):
     start_time = pygame.time.get_ticks()
     card_width, card_height = DECK_CARD_WIDTH, DECK_CARD_HEIGHT
     card_center_offset = (card_width // 2, card_height // 2)
@@ -249,17 +249,12 @@ def animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_ang
         current_angle = start_angle + (end_angle - start_angle) * progress
 
         # Debug: Print current positions and angles
-        print(
-            f"Progress: {progress:.2f}, Current Pos: ({current_x:.2f}, {current_y:.2f}), Target Pos: {end_pos}, Current Angle: {current_angle:.2f}, Target Angle: {end_angle:.2f}")
-        print(f"Moving to Board Space - Row: {target_row}, Col: {target_col}, Position: ({end_pos[0]}, {end_pos[1]})")
+        print(f"Progress: {progress:.2f}, Current Pos: ({current_x:.2f}, {current_y:.2f}), Target Pos: {end_pos}, Current Angle: {current_angle:.2f}, Target Angle: {end_angle:.2f}")
 
-        draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font,
-                                player_hand_cards, ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count,
-                                ai_hand_count, font, green_pawn_image, red_pawn_image, target_row, target_col)
+        draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards, ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font, green_pawn_image, red_pawn_image)
 
         # Draw the moving card
-        moving_card_rect = pygame.Rect(current_x - card_center_offset[0], current_y - card_center_offset[1], card_width,
-                                       card_height)
+        moving_card_rect = pygame.Rect(current_x - card_center_offset[0], current_y - card_center_offset[1], card_width, card_height)
         draw_rotated_card(screen, {
             'rect': moving_card_rect,
             'angle': current_angle,
@@ -277,3 +272,17 @@ def animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_ang
     # Debug: Draw final position marker
     pygame.draw.circle(screen, (255, 0, 0), end_pos, 5)
     pygame.display.flip()
+
+def apply_power_up(card, base_row, base_col, board_values, player):
+    for row_offset, col_offset in card.power_up_positions:
+        new_row = base_row + row_offset
+        new_col = base_col + col_offset
+        if 0 <= new_row < BOARD_ROWS and 0 <= new_col < BOARD_COLS:
+            index = new_row * BOARD_COLS + new_col
+            if player and board_values[index]['owner'] == 'player' and board_values[index]['card'] is not None:
+                board_values[index]['strength'] += card.power_up_value
+                print(f"Power-up applied at ({new_row}, {new_col}). New strength: {board_values[index]['strength']}")
+            elif not player and board_values[index]['owner'] == 'ai' and board_values[index]['card'] is not None:
+                board_values[index]['strength'] += card.power_up_value
+                print(f"Power-up applied at ({new_row}, {new_col}). New strength: {board_values[index]['strength']}")
+

@@ -3,25 +3,26 @@ import sys
 from constants import *
 from deck import Deck
 from images import load_images
-from utils import draw_rotated_card, get_arc_position_and_angle, update_hand_positions, ai_place_card, place_card_pawns, draw_board_and_elements
+from utils import draw_rotated_card, get_arc_position_and_angle, update_hand_positions, ai_place_card, place_card_pawns, draw_board_and_elements, apply_power_up
 from card import Card
 
 pygame.init()
 
 # Load images
-green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image = load_images()
+green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image, knight_image = load_images()
 
 # Create card instances
 foot_soldier_card = Card("Foot Soldier", 1, foot_soldier_image, [(0, 1)], 2)
 apprentice_card = Card("Apprentice", 1, apprentice_image, [(0, 2)], 1)
 rogue_card = Card("Rogue", 1, rogue_image, [(0, 3)], 1)
 spearman_card = Card("Spearman", 2, spearman_image, [(0, 1), (0, 2)], 2)
-archer_card = Card("Archer", 2, archer_image, [(0, 2), (0, 3)], 2)  # Add archer card
+archer_card = Card("Archer", 2, archer_image, [(0, 2), (0, 3)], 2)
 shieldbearer_card = Card("Shieldbearer", 1, shieldbearer_image, [(-1, 0), (1, 0)], 1)
+knight_card = Card("Knight", 2, knight_image, [(0, 0)], 3, power_up_positions=[(-1, 0), (1, 0)], power_up_value=1)  # Knight card with power-up
 
 # Initialize player and AI decks with 30 cards each
-player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card] * 5)
-ai_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card] * 5)
+player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card, knight_card] * 4)
+ai_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card, knight_card] * 4)
 
 # Player hand cards and other variables
 player_hand_cards = []
@@ -122,16 +123,17 @@ def place_card_on_board(card, row, col, player=True):
     if player:
         board_values[index]['player'] -= card.placement_cost
         board_values[index]['ai'] = 0
-        board_values[index]['owner'] = 'player'  # Set the owner to player
+        board_values[index]['owner'] = 'player'
     else:
         board_values[index]['ai'] -= card.placement_cost
         board_values[index]['player'] = 0
-        board_values[index]['owner'] = 'ai'  # Set the owner to AI
+        board_values[index]['owner'] = 'ai'
     board_values[index]['image'] = card.image
     board_values[index]['card'] = card  # Store the card itself
+    board_values[index]['strength'] = card.strength  # Initialize the strength attribute
     place_card_pawns(card, row, col, player, board_values, green_pawn_image, red_pawn_image)
-    print(f"Card {card.name} placed at ({row}, {col}). Player: {board_values[index]['player']}, AI: {board_values[index]['ai']}, Owner: {board_values[index]['owner']}")
-    print(board_values)
+    apply_power_up(card, row, col, board_values, player)
+    print(f"Card {card.name} placed at ({row}, {col}). Player: {board_values[index]['player']}, AI: {board_values[index]['ai']}")
 
 # Print deck positions and draw red dots
 print(f"Player Deck Position: ({PLAYER_DECK_POSITION_X}, {PLAYER_DECK_POSITION_Y})")
