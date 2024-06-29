@@ -1,7 +1,6 @@
 import pygame
 from constants import *
 
-
 def draw_rotated_card(screen, card):
     rect = card['rect']
     angle = card['angle']
@@ -124,6 +123,9 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
 
     # Draw the board and pawns
     for row in range(BOARD_ROWS):
+        player_strength_total = 0
+        ai_strength_total = 0
+
         for col in range(BOARD_COLS):
             space_x = centered_margin_x + col * RECT_WIDTH
             space_y = centered_margin_y + row * RECT_HEIGHT
@@ -140,6 +142,12 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                     strength_rect = strength_text.get_rect()
                     strength_rect.bottomleft = (space_x + 5, space_y + RECT_HEIGHT - 5)
                     screen.blit(strength_text, strength_rect.topleft)
+
+                    # Add strength to the respective total
+                    if board_values[index]['owner'] == 'player':
+                        player_strength_total += board_values[index]['card'].strength
+                    elif board_values[index]['owner'] == 'ai':
+                        ai_strength_total += board_values[index]['card'].strength
             else:
                 if col == 1:
                     screen.blit(green_pawn_image, (space_x + 1, space_y + 1))
@@ -161,19 +169,26 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                     owner_color = (255, 0, 0)  # Red for AI
 
                 owner_text_render = small_font.render(owner_text, True, owner_color)
-                player_pawn_text = small_font.render(f'P: {player_pawn_count}', True, BLACK)
-                ai_pawn_text = small_font.render(f'A: {ai_pawn_count}', True, BLACK)
-
-                # Blit the owner text
                 screen.blit(owner_text_render, (space_x + 5, space_y + 5))
 
                 # Blit the pawn counts below the owner text
+                player_pawn_text = small_font.render(f'P: {player_pawn_count}', True, BLACK)
+                ai_pawn_text = small_font.render(f'A: {ai_pawn_count}', True, BLACK)
                 screen.blit(player_pawn_text, (space_x + 5, space_y + 5 + owner_text_render.get_height()))
                 screen.blit(ai_pawn_text,
                             (space_x + 5, space_y + 5 + owner_text_render.get_height() + player_pawn_text.get_height()))
 
             if target_row is not None and target_col is not None and row == target_row and col == target_col:
                 pygame.draw.circle(screen, (0, 0, 255), (space_x + RECT_WIDTH // 2, space_y + RECT_HEIGHT // 2), 5)
+
+        # Display the strength totals in column 1 for player and column 6 for AI
+        player_strength_text = small_font.render(f'Strength ttl: {player_strength_total}', True, BLACK)
+        screen.blit(player_strength_text, (centered_margin_x + 5,
+                                           centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2 - player_strength_text.get_height() // 2))
+
+        ai_strength_text = small_font.render(f'Strength ttl: {ai_strength_total}', True, BLACK)
+        screen.blit(ai_strength_text, (centered_margin_x + (BOARD_COLS - 1) * RECT_WIDTH + 5,
+                                       centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2 - ai_strength_text.get_height() // 2))
 
     # Draw the player's hand
     for player_card in player_hand_cards:
