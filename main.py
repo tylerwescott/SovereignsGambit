@@ -63,7 +63,7 @@ font = pygame.font.SysFont(None, 55)
 small_font = pygame.font.SysFont(None, 25)
 
 # Initialize the board with values
-board_values = [{'player': 0, 'ai': 0, 'image': None, 'card': None, 'owner': None} for _ in range(BOARD_ROWS * BOARD_COLS)]
+board_values = [{'player': 0, 'ai': 0, 'image': None, 'card': None, 'owner': None, 'strength': 0} for _ in range(BOARD_ROWS * BOARD_COLS)]
 for row in range(BOARD_ROWS):
     for col in range(1, 6):
         if col == 1:
@@ -135,6 +135,12 @@ def place_card_on_board(card, row, col, player=True):
     apply_power_up(card, row, col, board_values, player)
     print(f"Card {card.name} placed at ({row}, {col}). Player: {board_values[index]['player']}, AI: {board_values[index]['ai']}")
 
+def end_turn():
+    global is_player_turn, turn_end
+    if is_player_turn:
+        is_player_turn = False
+        turn_end = True
+
 # Print deck positions and draw red dots
 print(f"Player Deck Position: ({PLAYER_DECK_POSITION_X}, {PLAYER_DECK_POSITION_Y})")
 print(f"AI Deck Position: ({AI_DECK_POSITION_X}, {AI_DECK_POSITION_Y})")
@@ -146,29 +152,29 @@ draw_card_from_ai_deck(ai_deck)
 running = True
 while running:
     if turn_end:
-        if is_player_turn:
-            is_player_turn = False
+        if not is_player_turn:
             ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image, red_pawn_image, draw_card_from_ai_deck, place_card_on_board, original_ai_hand_positions, centered_margin_x, centered_margin_y, small_font, player_hand_cards, original_player_hand_positions, player_deck.cards_left(), len(player_hand_cards), font)
-            turn_end = True  # Ensure the player's turn starts in the next iteration
-        else:
+            turn_end = False  # Ensure the player's turn starts in the next iteration
             is_player_turn = True
-            turn_end = False  # Reset turn_end for the next turn
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and is_player_turn:
+        elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = event.pos
-            if moving_card is None:
-                for card in player_hand_cards:
-                    if card['rect'].collidepoint(mouse_x, mouse_y):
-                        dragging_card = card
-                        dragging_offset_x = card['rect'].x - mouse_x
-                        dragging_offset_y = card['rect'].y - mouse_y
-                        break
-            if PLAYER_DECK_POSITION_X <= mouse_x <= PLAYER_DECK_POSITION_X + DECK_CARD_WIDTH and \
-               PLAYER_DECK_POSITION_Y <= mouse_y <= DECK_CARD_HEIGHT + PLAYER_DECK_POSITION_Y:
-                draw_card_from_player_deck(player_deck)
+            if end_turn_button.collidepoint(mouse_x, mouse_y):
+                end_turn()
+            elif is_player_turn:
+                if moving_card is None:
+                    for card in player_hand_cards:
+                        if card['rect'].collidepoint(mouse_x, mouse_y):
+                            dragging_card = card
+                            dragging_offset_x = card['rect'].x - mouse_x
+                            dragging_offset_y = card['rect'].y - mouse_y
+                            break
+                if PLAYER_DECK_POSITION_X <= mouse_x <= PLAYER_DECK_POSITION_X + DECK_CARD_WIDTH and \
+                   PLAYER_DECK_POSITION_Y <= mouse_y <= DECK_CARD_HEIGHT + PLAYER_DECK_POSITION_Y:
+                    draw_card_from_player_deck(player_deck)
         elif event.type == pygame.MOUSEBUTTONUP and is_player_turn:
             if dragging_card:
                 mouse_x, mouse_y = event.pos
@@ -262,6 +268,12 @@ while running:
 
     if dragging_card:
         draw_rotated_card(screen, dragging_card)
+
+    # Draw the "End Turn" button
+    end_turn_button = pygame.Rect(SCREEN_WIDTH - 200, SCREEN_HEIGHT - 100, 190, 60)
+    pygame.draw.rect(screen, BLACK, end_turn_button)
+    end_turn_text = small_font.render('End Turn', True, WHITE)
+    screen.blit(end_turn_text, (end_turn_button.x + 10, end_turn_button.y + 15))
 
     pygame.display.flip()
 
