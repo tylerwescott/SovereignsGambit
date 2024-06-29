@@ -27,14 +27,17 @@ def draw_rotated_card(screen, card):
     placement_cost_rect.topleft = (5, 5)
     card_surface.blit(placement_cost_text, placement_cost_rect.topleft)
 
-    # Draw the 5x5 grid at the bottom center of the card
-    grid_size = 10
+    # Draw the 7x7 grid at the bottom center of the card
+    grid_size = 12  # Reduced to 80% of previous 15
     grid_center_x = rect.width // 2
-    grid_center_y = rect.height - grid_size * 2.5  # Adjust as needed to position the grid at the bottom
+    grid_center_y = rect.height - grid_size * 3.5  # Adjust as needed to position the grid at the bottom
 
-    for r in range(-2, 3):
-        for c in range(-2, 3):
-            color = (255, 255, 0) if (r, c) in card['card'].pawn_placement else (200, 200, 200)
+    for r in range(-3, 4):
+        for c in range(-3, 4):
+            if r == 0 and c == 0:
+                color = WHITE  # Center square
+            else:
+                color = (255, 255, 0) if (r, c) in card['card'].pawn_placement else (200, 200, 200)
             grid_rect = pygame.Rect(
                 grid_center_x + c * grid_size - grid_size // 2,
                 grid_center_y + r * grid_size - grid_size // 2,
@@ -131,17 +134,24 @@ def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image
 
     draw_card_from_ai_deck(ai_deck)
 
-
-def draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards,
-                            ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font,
-                            green_pawn_image, red_pawn_image, target_row=None, target_col=None):
+def draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards, ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font, green_pawn_image, red_pawn_image, target_row=None, target_col=None):
     screen.fill(WHITE)
+
+    player_row_strengths = [0] * BOARD_ROWS
+    ai_row_strengths = [0] * BOARD_ROWS
+
+    # Calculate row strengths for player and AI
+    for row in range(BOARD_ROWS):
+        for col in range(BOARD_COLS):
+            index = row * BOARD_COLS + col
+            if board_values[index]['card'] is not None:
+                if board_values[index]['owner'] == 'player':
+                    player_row_strengths[row] += board_values[index]['card'].strength
+                elif board_values[index]['owner'] == 'ai':
+                    ai_row_strengths[row] += board_values[index]['card'].strength
 
     # Draw the board and pawns
     for row in range(BOARD_ROWS):
-        player_strength_total = 0
-        ai_strength_total = 0
-
         for col in range(BOARD_COLS):
             space_x = centered_margin_x + col * RECT_WIDTH
             space_y = centered_margin_y + row * RECT_HEIGHT
@@ -158,12 +168,6 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                     strength_rect = strength_text.get_rect()
                     strength_rect.bottomleft = (space_x + 5, space_y + RECT_HEIGHT - 5)
                     screen.blit(strength_text, strength_rect.topleft)
-
-                    # Add strength to the respective total
-                    if board_values[index]['owner'] == 'player':
-                        player_strength_total += board_values[index]['card'].strength
-                    elif board_values[index]['owner'] == 'ai':
-                        ai_strength_total += board_values[index]['card'].strength
             else:
                 if col == 1:
                     screen.blit(green_pawn_image, (space_x + 1, space_y + 1))
@@ -173,38 +177,27 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
             if 1 <= col <= 5:
                 player_pawn_count = board_values[index]['player']
                 ai_pawn_count = board_values[index]['ai']
-
-                # Determine the owner text and color
-                owner_text = "Owner: None"
-                owner_color = BLACK
-                if board_values[index]['owner'] == 'player':
-                    owner_text = "Owner: Player"
-                    owner_color = (0, 0, 255)  # Blue for player
-                elif board_values[index]['owner'] == 'ai':
-                    owner_text = "Owner: AI"
-                    owner_color = (255, 0, 0)  # Red for AI
-
-                owner_text_render = small_font.render(owner_text, True, owner_color)
-                screen.blit(owner_text_render, (space_x + 5, space_y + 5))
-
-                # Blit the pawn counts below the owner text
                 player_pawn_text = small_font.render(f'P: {player_pawn_count}', True, BLACK)
                 ai_pawn_text = small_font.render(f'A: {ai_pawn_count}', True, BLACK)
-                screen.blit(player_pawn_text, (space_x + 5, space_y + 5 + owner_text_render.get_height()))
-                screen.blit(ai_pawn_text,
-                            (space_x + 5, space_y + 5 + owner_text_render.get_height() + player_pawn_text.get_height()))
+                screen.blit(player_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 - player_pawn_text.get_height() // 2))
+                screen.blit(ai_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 + ai_pawn_text.get_height() // 2))
 
             if target_row is not None and target_col is not None and row == target_row and col == target_col:
                 pygame.draw.circle(screen, (0, 0, 255), (space_x + RECT_WIDTH // 2, space_y + RECT_HEIGHT // 2), 5)
 
-        # Display the strength totals in column 1 for player and column 6 for AI
-        player_strength_text = small_font.render(f'Strength ttl: {player_strength_total}', True, BLACK)
-        screen.blit(player_strength_text, (centered_margin_x + 5,
-                                           centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2 - player_strength_text.get_height() // 2))
+    # Draw the strength totals in columns 0 and 6
+    for row in range(BOARD_ROWS):
+        player_strength_symbol = "^" if player_row_strengths[row] > ai_row_strengths[row] else "v" if player_row_strengths[row] < ai_row_strengths[row] else "="
+        ai_strength_symbol = "^" if ai_row_strengths[row] > player_row_strengths[row] else "v" if ai_row_strengths[row] < player_row_strengths[row] else "="
 
-        ai_strength_text = small_font.render(f'Strength ttl: {ai_strength_total}', True, BLACK)
-        screen.blit(ai_strength_text, (centered_margin_x + (BOARD_COLS - 1) * RECT_WIDTH + 5,
-                                       centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2 - ai_strength_text.get_height() // 2))
+        player_strength_text = small_font.render(f'Strength ttl: {player_row_strengths[row]} {player_strength_symbol}', True, BLUE)
+        ai_strength_text = small_font.render(f'Strength ttl: {ai_row_strengths[row]} {ai_strength_symbol}', True, RED)
+
+        player_strength_rect = player_strength_text.get_rect(center=(centered_margin_x + RECT_WIDTH // 2, centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2))
+        ai_strength_rect = ai_strength_text.get_rect(center=(centered_margin_x + BOARD_WIDTH - RECT_WIDTH // 2, centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2))
+
+        screen.blit(player_strength_text, player_strength_rect.topleft)
+        screen.blit(ai_strength_text, ai_strength_rect.topleft)
 
     # Draw the player's hand
     for player_card in player_hand_cards:
@@ -237,7 +230,6 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
     screen.blit(ai_hand_count_text, (10, 130))
     ai_deck_count_text = small_font.render(f'AI Deck: {ai_deck_count}', True, BLACK)
     screen.blit(ai_deck_count_text, (10, 190))
-
 
 def animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_angle, duration, centered_margin_x,
                           centered_margin_y,
