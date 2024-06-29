@@ -62,7 +62,7 @@ font = pygame.font.SysFont(None, 55)
 small_font = pygame.font.SysFont(None, 25)
 
 # Initialize the board with values
-board_values = [{'player': 0, 'ai': 0, 'image': None, 'card': None} for _ in range(BOARD_ROWS * BOARD_COLS)]
+board_values = [{'player': 0, 'ai': 0, 'image': None, 'card': None, 'owner': None} for _ in range(BOARD_ROWS * BOARD_COLS)]
 for row in range(BOARD_ROWS):
     for col in range(1, 6):
         if col == 1:
@@ -122,13 +122,16 @@ def place_card_on_board(card, row, col, player=True):
     if player:
         board_values[index]['player'] -= card.placement_cost
         board_values[index]['ai'] = 0
+        board_values[index]['owner'] = 'player'  # Set the owner to player
     else:
         board_values[index]['ai'] -= card.placement_cost
         board_values[index]['player'] = 0
+        board_values[index]['owner'] = 'ai'  # Set the owner to AI
     board_values[index]['image'] = card.image
     board_values[index]['card'] = card  # Store the card itself
     place_card_pawns(card, row, col, player, board_values, green_pawn_image, red_pawn_image)
-    print(f"Card {card.name} placed at ({row}, {col}). Player: {board_values[index]['player']}, AI: {board_values[index]['ai']}")
+    print(f"Card {card.name} placed at ({row}, {col}). Player: {board_values[index]['player']}, AI: {board_values[index]['ai']}, Owner: {board_values[index]['owner']}")
+    print(board_values)
 
 # Print deck positions and draw red dots
 print(f"Player Deck Position: ({PLAYER_DECK_POSITION_X}, {PLAYER_DECK_POSITION_Y})")

@@ -1,6 +1,7 @@
 import pygame
 from constants import *
 
+
 def draw_rotated_card(screen, card):
     rect = card['rect']
     angle = card['angle']
@@ -38,6 +39,7 @@ def draw_rotated_card(screen, card):
     pygame.draw.circle(screen, (255, 0, 0), top_left_pos, 5)  # Red dot at top left
     return top_left_pos
 
+
 def get_arc_position_and_angle(start_pos, end_pos, start_angle, end_angle, progress, arc_height):
     x = start_pos[0] + (end_pos[0] - start_pos[0]) * progress
     mid_x = (start_pos[0] + end_pos[0]) / 2
@@ -46,6 +48,7 @@ def get_arc_position_and_angle(start_pos, end_pos, start_angle, end_angle, progr
     y = y + (end_pos[1] - y) * progress  # Smooth out the y position to reach the end smoothly
     angle = start_angle + (end_angle - start_angle) * progress
     return (x, y), angle
+
 
 def update_hand_positions(hand_cards, hand_position_y, original_hand_positions):
     original_hand_positions.clear()
@@ -57,6 +60,7 @@ def update_hand_positions(hand_cards, hand_position_y, original_hand_positions):
             card['rect'].topleft = pos
             card['angle'] = -CARD_TILT_ANGLE * (i - (len(hand_cards) - 1) / 2)
             original_hand_positions.append(pos)
+
 
 def place_card_pawns(card, base_row, base_col, player, board_values, green_pawn_image, red_pawn_image):
     for placement in card.pawn_placement:
@@ -77,9 +81,14 @@ def place_card_pawns(card, base_row, base_col, player, board_values, green_pawn_
                     board_values[index]['ai'] += 1
                     board_values[index]['player'] = 0  # Zero out player's pawn count
                     board_values[index]['image'] = red_pawn_image
-                print(f"Pawn placed at ({new_row}, {new_col}). Player: {board_values[index]['player']}, AI: {board_values[index]['ai']}")
+                print(
+                    f"Pawn placed at ({new_row}, {new_col}). Player: {board_values[index]['player']}, AI: {board_values[index]['ai']}")
 
-def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image, red_pawn_image, draw_card_from_ai_deck, place_card_on_board, original_ai_hand_positions, centered_margin_x, centered_margin_y, small_font, player_hand_cards, original_player_hand_positions, player_deck_count, player_hand_count, font):
+
+def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image, red_pawn_image,
+                  draw_card_from_ai_deck, place_card_on_board, original_ai_hand_positions, centered_margin_x,
+                  centered_margin_y, small_font, player_hand_cards, original_player_hand_positions, player_deck_count,
+                  player_hand_count, font):
     for card in ai_hand_cards:
         for row in range(BOARD_ROWS):
             for col in range(BOARD_COLS):
@@ -89,19 +98,28 @@ def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image
                     update_hand_positions(ai_hand_cards, AI_HAND_POSITION_Y, original_ai_hand_positions)
 
                     start_pos = card['rect'].center
-                    end_pos = ((centered_margin_x + col * RECT_WIDTH) + RECT_WIDTH // 2, (centered_margin_y + row * RECT_HEIGHT) + RECT_HEIGHT // 2)
+                    end_pos = ((centered_margin_x + col * RECT_WIDTH) + RECT_WIDTH // 2,
+                               (centered_margin_y + row * RECT_HEIGHT) + RECT_HEIGHT // 2)
                     start_angle = card['angle']
                     end_angle = 0  # Set the angle to 0 when placing on the board
 
                     # Pass additional parameters to animate_card_to_board
-                    animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_angle, 1000, centered_margin_x, centered_margin_y, board_values, green_pawn_image, red_pawn_image, small_font, ai_hand_cards, ai_deck.cards_left(), original_ai_hand_positions, len(ai_hand_cards), player_hand_cards, player_deck_count, original_player_hand_positions, player_hand_count, font, row, col)
+                    animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_angle, 1000,
+                                          centered_margin_x, centered_margin_y, board_values, green_pawn_image,
+                                          red_pawn_image, small_font, ai_hand_cards, ai_deck.cards_left(),
+                                          original_ai_hand_positions, len(ai_hand_cards), player_hand_cards,
+                                          player_deck_count, original_player_hand_positions, player_hand_count, font,
+                                          row, col)
 
                     place_card_on_board(card['card'], row, col, player=False)
                     return
 
     draw_card_from_ai_deck(ai_deck)
 
-def draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards, ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font, green_pawn_image, red_pawn_image, target_row=None, target_col=None):
+
+def draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards,
+                            ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font,
+                            green_pawn_image, red_pawn_image, target_row=None, target_col=None):
     screen.fill(WHITE)
 
     # Draw the board and pawns
@@ -131,10 +149,28 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
             if 1 <= col <= 5:
                 player_pawn_count = board_values[index]['player']
                 ai_pawn_count = board_values[index]['ai']
+
+                # Determine the owner text and color
+                owner_text = "Owner: None"
+                owner_color = BLACK
+                if board_values[index]['owner'] == 'player':
+                    owner_text = "Owner: Player"
+                    owner_color = (0, 0, 255)  # Blue for player
+                elif board_values[index]['owner'] == 'ai':
+                    owner_text = "Owner: AI"
+                    owner_color = (255, 0, 0)  # Red for AI
+
+                owner_text_render = small_font.render(owner_text, True, owner_color)
                 player_pawn_text = small_font.render(f'P: {player_pawn_count}', True, BLACK)
                 ai_pawn_text = small_font.render(f'A: {ai_pawn_count}', True, BLACK)
-                screen.blit(player_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 - player_pawn_text.get_height() // 2))
-                screen.blit(ai_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 + ai_pawn_text.get_height() // 2))
+
+                # Blit the owner text
+                screen.blit(owner_text_render, (space_x + 5, space_y + 5))
+
+                # Blit the pawn counts below the owner text
+                screen.blit(player_pawn_text, (space_x + 5, space_y + 5 + owner_text_render.get_height()))
+                screen.blit(ai_pawn_text,
+                            (space_x + 5, space_y + 5 + owner_text_render.get_height() + player_pawn_text.get_height()))
 
             if target_row is not None and target_col is not None and row == target_row and col == target_col:
                 pygame.draw.circle(screen, (0, 0, 255), (space_x + RECT_WIDTH // 2, space_y + RECT_HEIGHT // 2), 5)
@@ -171,6 +207,7 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
     ai_deck_count_text = small_font.render(f'AI Deck: {ai_deck_count}', True, BLACK)
     screen.blit(ai_deck_count_text, (10, 190))
 
+
 def animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_angle, duration, centered_margin_x,
                           centered_margin_y,
                           board_values, green_pawn_image, red_pawn_image, small_font, ai_hand_cards, ai_deck_count,
@@ -193,7 +230,9 @@ def animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_ang
             f"Progress: {progress:.2f}, Current Pos: ({current_x:.2f}, {current_y:.2f}), Target Pos: {end_pos}, Current Angle: {current_angle:.2f}, Target Angle: {end_angle:.2f}")
         print(f"Moving to Board Space - Row: {target_row}, Col: {target_col}, Position: ({end_pos[0]}, {end_pos[1]})")
 
-        draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards, ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font, green_pawn_image, red_pawn_image, target_row, target_col)
+        draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font,
+                                player_hand_cards, ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count,
+                                ai_hand_count, font, green_pawn_image, red_pawn_image, target_row, target_col)
 
         # Draw the moving card
         moving_card_rect = pygame.Rect(current_x - card_center_offset[0], current_y - card_center_offset[1], card_width,
