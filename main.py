@@ -205,8 +205,11 @@ while running:
                 dragging_card['rect'].x = mouse_x + dragging_offset_x
                 dragging_card['rect'].y = mouse_y + dragging_offset_y
 
+    # Inside the main loop, update the call to draw_board_and_elements
     # Draw board and elements
-    draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards, ai_hand_cards, player_deck.cards_left(), len(player_hand_cards), ai_deck.cards_left(), len(ai_hand_cards), font, green_pawn_image, red_pawn_image)
+    draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards,
+                            ai_hand_cards, player_deck.cards_left(), len(player_hand_cards), ai_deck.cards_left(),
+                            len(ai_hand_cards), font, green_pawn_image, red_pawn_image, dragging_card)
 
     # Draw red dots at deck positions
     pygame.draw.circle(screen, (255, 0, 0), (PLAYER_DECK_POSITION_X, PLAYER_DECK_POSITION_Y), 5)

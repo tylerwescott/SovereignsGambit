@@ -135,7 +135,7 @@ def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image
 
     draw_card_from_ai_deck(ai_deck)
 
-def draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards, ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font, green_pawn_image, red_pawn_image):
+def draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards, ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font, green_pawn_image, red_pawn_image, dragging_card=None):
     screen.fill(WHITE)
 
     player_row_strengths = [0] * BOARD_ROWS
@@ -199,6 +199,19 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
 
         screen.blit(player_strength_text, player_strength_rect)
         screen.blit(ai_strength_text, ai_strength_rect)
+
+    # Highlight the valid board space
+    if dragging_card:
+        for row in range(BOARD_ROWS):
+            for col in range(BOARD_COLS):
+                space_x = centered_margin_x + col * RECT_WIDTH
+                space_y = centered_margin_y + row * RECT_HEIGHT
+                space = pygame.Rect(space_x, space_y, RECT_WIDTH, RECT_HEIGHT)
+                index = row * BOARD_COLS + col
+                if space.collidepoint(dragging_card['rect'].center):
+                    if (board_values[index]['card'] is None or board_values[index]['image'] in [green_pawn_image, red_pawn_image]) and \
+                       board_values[index]['player'] >= dragging_card['card'].placement_cost:
+                        pygame.draw.rect(screen, (0, 255, 0), space, 5)
 
     # Draw the player's hand
     for player_card in player_hand_cards:
