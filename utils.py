@@ -200,7 +200,7 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
         screen.blit(player_strength_text, player_strength_rect)
         screen.blit(ai_strength_text, ai_strength_rect)
 
-    # Highlight the valid board space
+    # Highlight the valid board space and show faded green pawns
     if dragging_card:
         for row in range(BOARD_ROWS):
             for col in range(BOARD_COLS):
@@ -209,9 +209,23 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                 space = pygame.Rect(space_x, space_y, RECT_WIDTH, RECT_HEIGHT)
                 index = row * BOARD_COLS + col
                 if space.collidepoint(dragging_card['rect'].center):
-                    if (board_values[index]['card'] is None or board_values[index]['image'] in [green_pawn_image, red_pawn_image]) and \
-                       board_values[index]['player'] >= dragging_card['card'].placement_cost:
+                    if board_values[index]['card'] is None and board_values[index]['player'] >= dragging_card['card'].placement_cost:
                         pygame.draw.rect(screen, (0, 255, 0), space, 5)
+
+                        # Show faded green pawns where they will be placed
+                        for placement in dragging_card['card'].pawn_placement:
+                            row_offset, col_offset = placement
+                            new_row = row + row_offset
+                            new_col = col + col_offset
+                            if 0 <= new_row < BOARD_ROWS and 1 <= new_col <= 5:
+                                pawn_index = new_row * BOARD_COLS + new_col
+                                if board_values[pawn_index]['card'] is None:
+                                    pawn_x = centered_margin_x + new_col * RECT_WIDTH
+                                    pawn_y = centered_margin_y + new_row * RECT_HEIGHT
+                                    pawn_space = pygame.Rect(pawn_x, pawn_y, RECT_WIDTH, RECT_HEIGHT)
+                                    faded_green_pawn = green_pawn_image.copy()
+                                    faded_green_pawn.set_alpha(128)  # Set transparency to 50%
+                                    screen.blit(faded_green_pawn, (pawn_x + 1, pawn_y + 1))
 
     # Draw the player's hand
     for player_card in player_hand_cards:
