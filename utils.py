@@ -135,7 +135,10 @@ def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image
 
     draw_card_from_ai_deck(ai_deck)
 
-def draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards, ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font, green_pawn_image, red_pawn_image, dragging_card=None):
+
+def draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards,
+                            ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font,
+                            green_pawn_image, red_pawn_image, dragging_card=None):
     screen.fill(WHITE)
 
     player_row_strengths = [0] * BOARD_ROWS
@@ -155,22 +158,29 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
 
                 # Draw the strength text if the card is present
                 if board_values[index]['card'] is not None:
-                    strength_text = small_font.render(str(board_values[index]['strength']), True, BLACK)
+                    strength = board_values[index]['strength']
+                    strength_text = small_font.render(str(strength), True, BLACK)
                     strength_rect = strength_text.get_rect()
                     strength_rect.bottomleft = (space_x + 5, space_y + RECT_HEIGHT - 5)
-                    screen.blit(strength_text, strength_rect.topleft)
 
-                    # Draw a blue outline for player-owned cards and a red outline for AI-owned cards
-                    if board_values[index]['owner'] == 'player':
-                        pygame.draw.rect(screen, BLUE, space, 5)
-                    elif board_values[index]['owner'] == 'ai':
-                        pygame.draw.rect(screen, RED, space, 5)
+                    # Check if there is a power-up and show "+x" in green
+                    power_up_text = ""
+                    if dragging_card and (row, col) in [(row + pos[0], col + pos[1]) for pos in
+                                                        dragging_card['card'].power_up_positions]:
+                        power_up_value = dragging_card['card'].power_up_value
+                        power_up_text = f" +{power_up_value}"
+                        power_up_surface = small_font.render(power_up_text, True, (0, 255, 0))
+                        power_up_rect = power_up_surface.get_rect()
+                        power_up_rect.midleft = strength_rect.midright
+                        screen.blit(power_up_surface, power_up_rect.topleft)
+
+                    screen.blit(strength_text, strength_rect.topleft)
 
                     # Update row strength totals
                     if board_values[index]['owner'] == 'player':
-                        player_row_strengths[row] += board_values[index]['strength']
+                        player_row_strengths[row] += strength
                     elif board_values[index]['owner'] == 'ai':
-                        ai_row_strengths[row] += board_values[index]['strength']
+                        ai_row_strengths[row] += strength
             else:
                 if col == 1:
                     screen.blit(green_pawn_image, (space_x + 1, space_y + 1))
@@ -182,7 +192,8 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                 ai_pawn_count = board_values[index]['ai']
                 player_pawn_text = small_font.render(f'P: {player_pawn_count}', True, BLACK)
                 ai_pawn_text = small_font.render(f'A: {ai_pawn_count}', True, BLACK)
-                screen.blit(player_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 - player_pawn_text.get_height() // 2))
+                screen.blit(player_pawn_text,
+                            (space_x + 5, space_y + RECT_HEIGHT // 2 - player_pawn_text.get_height() // 2))
                 screen.blit(ai_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 + ai_pawn_text.get_height() // 2))
 
     # Draw the strength totals for each row in columns 0 and 6
@@ -200,8 +211,11 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
             player_strength_text = small_font.render(f'Strength ttl: {player_row_strengths[row]} =', True, BLUE)
             ai_strength_text = small_font.render(f'Strength ttl: {ai_row_strengths[row]} =', True, RED)
 
-        player_strength_rect = player_strength_text.get_rect(center=(centered_margin_x - RECT_WIDTH // 2, centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2))
-        ai_strength_rect = ai_strength_text.get_rect(center=(centered_margin_x + BOARD_COLS * RECT_WIDTH + RECT_WIDTH // 2, centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2))
+        player_strength_rect = player_strength_text.get_rect(
+            center=(centered_margin_x - RECT_WIDTH // 2, centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2))
+        ai_strength_rect = ai_strength_text.get_rect(center=(
+        centered_margin_x + BOARD_COLS * RECT_WIDTH + RECT_WIDTH // 2,
+        centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2))
 
         screen.blit(player_strength_text, player_strength_rect)
         screen.blit(ai_strength_text, ai_strength_rect)
@@ -215,7 +229,8 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                 space = pygame.Rect(space_x, space_y, RECT_WIDTH, RECT_HEIGHT)
                 index = row * BOARD_COLS + col
                 if space.collidepoint(dragging_card['rect'].center):
-                    if board_values[index]['card'] is None and board_values[index]['player'] >= dragging_card['card'].placement_cost:
+                    if board_values[index]['card'] is None and board_values[index]['player'] >= dragging_card[
+                        'card'].placement_cost:
                         pygame.draw.rect(screen, (0, 255, 0), space, 5)
 
                         # Show faded green pawns where they will be placed
@@ -231,6 +246,33 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                                     faded_green_pawn = green_pawn_image.copy()
                                     faded_green_pawn.set_alpha(128)  # Set transparency to 50%
                                     screen.blit(faded_green_pawn, (pawn_x + 1, pawn_y + 1))
+
+                        # Show power-up indicator
+                        for row_offset, col_offset in dragging_card['card'].power_up_positions:
+                            new_row = row + row_offset
+                            new_col = col + col_offset
+                            if 0 <= new_row < BOARD_ROWS and 0 <= new_col < BOARD_COLS:
+                                power_up_index = new_row * BOARD_COLS + new_col
+                                if board_values[power_up_index]['card'] is not None:
+                                    power_up_x = centered_margin_x + new_col * RECT_WIDTH
+                                    power_up_y = centered_margin_y + new_row * RECT_HEIGHT
+                                    power_up_image = pygame.image.load('images/powerUp.jpg')
+                                    power_up_size = int(RECT_WIDTH / 4)
+                                    power_up_image = pygame.transform.scale(power_up_image,
+                                                                            (power_up_size, power_up_size))
+                                    screen.blit(power_up_image, (
+                                    power_up_x + RECT_WIDTH // 2 - power_up_image.get_width() // 2,
+                                    power_up_y + RECT_HEIGHT - power_up_image.get_height() - 5))
+
+                                    # Show the potential new strength value in green next to the current strength value
+                                    current_strength = board_values[power_up_index]['strength']
+                                    new_strength = current_strength + dragging_card['card'].power_up_value
+                                    power_up_value_text = small_font.render(f"+{dragging_card['card'].power_up_value}",
+                                                                            True, (0, 255, 0))
+                                    power_up_value_rect = power_up_value_text.get_rect()
+                                    power_up_value_rect.bottomleft = (
+                                    power_up_x + 5 + strength_text.get_width(), power_up_y + RECT_HEIGHT - 5)
+                                    screen.blit(power_up_value_text, power_up_value_rect.topleft)
 
     # Draw the player's hand
     for player_card in player_hand_cards:
