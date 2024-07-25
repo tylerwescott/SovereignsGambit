@@ -9,7 +9,7 @@ from card import Card
 pygame.init()
 
 # Load images
-green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image, knight_image = load_images()
+green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image, knight_image, vanguard_image = load_images()
 
 # Create card instances
 foot_soldier_card = Card("Foot Soldier", 1, foot_soldier_image, [(0, 1)], 2)
@@ -19,10 +19,11 @@ spearman_card = Card("Spearman", 2, spearman_image, [(0, 1), (0, 2)], 2)
 archer_card = Card("Archer", 2, archer_image, [(0, 2), (0, 3)], 2)
 shieldbearer_card = Card("Shieldbearer", 1, shieldbearer_image, [(-1, 0), (1, 0)], 1)
 knight_card = Card("Knight", 2, knight_image, [(0, 0)], 3, power_up_positions=[(-1, 0), (1, 0)], power_up_value=1)  # Knight card with power-up
+vanguard_card = Card("Vanguard", 1, vanguard_image, [(-1, 0), (1, 0), (0, -1), (0, 1)], 1)  # Vanguard card
 
 # Initialize player and AI decks with 30 cards each
-player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card, knight_card] * 4)
-ai_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card, knight_card] * 4)
+player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card, knight_card, vanguard_card] * 4)
+ai_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card, knight_card, vanguard_card] * 4)
 
 # Player hand cards and other variables
 player_hand_cards = []
