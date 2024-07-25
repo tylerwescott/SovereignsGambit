@@ -175,14 +175,7 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
 
             index = row * BOARD_COLS + col
             if board_values[index]['image'] is not None:
-                # Draw the card's image
                 screen.blit(board_values[index]['image'], (space_x + 1, space_y + 1))
-
-                # Draw highlighting for player or AI cards
-                if board_values[index]['owner'] == 'player':
-                    pygame.draw.rect(screen, (0, 0, 255), space, 2)  # Blue border for player
-                elif board_values[index]['owner'] == 'ai':
-                    pygame.draw.rect(screen, (255, 0, 0), space, 2)  # Red border for AI
 
                 # Draw the strength text if the card is present
                 if board_values[index]['card'] is not None:
@@ -212,29 +205,65 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                             (space_x + 5, space_y + RECT_HEIGHT // 2 - player_pawn_text.get_height() // 2))
                 screen.blit(ai_pawn_text, (space_x + 5, space_y + RECT_HEIGHT // 2 + ai_pawn_text.get_height() // 2))
 
+    # Preview strength changes while dragging a card
+    if dragging_card:
+        # Create copies of row strengths to modify for preview
+        preview_player_row_strengths = player_row_strengths[:]
+        preview_ai_row_strengths = ai_row_strengths[:]
+
+        # Determine which rows are affected by dragging_card's power-up or power-down positions
+        for row in range(BOARD_ROWS):
+            for col in range(BOARD_COLS):
+                index = row * BOARD_COLS + col
+                if board_values[index]['card'] is None and pygame.Rect(centered_margin_x + col * RECT_WIDTH,
+                                                                      centered_margin_y + row * RECT_HEIGHT,
+                                                                      RECT_WIDTH, RECT_HEIGHT).collidepoint(
+                        dragging_card['rect'].center):
+                    # Potential placement of the card, update strength previews
+                    preview_player_row_strengths[row] += dragging_card['card'].strength if dragging_card['card'].strength else 0
+
+                    for pos in dragging_card['card'].power_up_positions:
+                        new_row = row + pos[0]
+                        new_col = col + pos[1]
+                        if 0 <= new_row < BOARD_ROWS and 0 <= new_col < BOARD_COLS:
+                            new_index = new_row * BOARD_COLS + new_col
+                            if board_values[new_index]['card'] and board_values[new_index]['owner'] == 'player':
+                                preview_player_row_strengths[new_row] += dragging_card['card'].power_up_value
+
+                    for pos in dragging_card['card'].power_down_positions:
+                        new_row = row + pos[0]
+                        new_col = col + pos[1]
+                        if 0 <= new_row < BOARD_ROWS and 0 <= new_col < BOARD_COLS:
+                            new_index = new_row * BOARD_COLS + new_col
+                            if board_values[new_index]['card'] and board_values[new_index]['owner'] == 'ai':
+                                current_strength = board_values[new_index]['strength']
+                                reduction = min(current_strength, dragging_card['card'].power_down_value)
+                                preview_ai_row_strengths[new_row] -= reduction
+
     # Draw the strength totals for each row in columns 0 and 6
     for row in range(BOARD_ROWS):
-        player_strength_text = small_font.render(f'Strength ttl: {player_row_strengths[row]}', True, BLUE)
-        ai_strength_text = small_font.render(f'Strength ttl: {ai_row_strengths[row]}', True, RED)
+        player_strength_text = f'Strength ttl: {player_row_strengths[row]}'
+        ai_strength_text = f'Strength ttl: {ai_row_strengths[row]}'
 
-        if player_row_strengths[row] > ai_row_strengths[row]:
-            player_strength_text = small_font.render(f'Strength ttl: {player_row_strengths[row]} ^', True, BLUE)
-            ai_strength_text = small_font.render(f'Strength ttl: {ai_row_strengths[row]} v', True, RED)
-        elif player_row_strengths[row] < ai_row_strengths[row]:
-            player_strength_text = small_font.render(f'Strength ttl: {player_row_strengths[row]} v', True, BLUE)
-            ai_strength_text = small_font.render(f'Strength ttl: {ai_row_strengths[row]} ^', True, RED)
-        else:
-            player_strength_text = small_font.render(f'Strength ttl: {player_row_strengths[row]} =', True, BLUE)
-            ai_strength_text = small_font.render(f'Strength ttl: {ai_row_strengths[row]} =', True, RED)
+        if dragging_card:
+            if player_row_strengths[row] != preview_player_row_strengths[row]:
+                player_change = preview_player_row_strengths[row] - player_row_strengths[row]
+                player_strength_text += f' ({"+" if player_change > 0 else ""}{player_change})'
+            if ai_row_strengths[row] != preview_ai_row_strengths[row]:
+                ai_change = preview_ai_row_strengths[row] - ai_row_strengths[row]
+                ai_strength_text += f' ({"+" if ai_change > 0 else ""}{ai_change})'
 
-        player_strength_rect = player_strength_text.get_rect(
+        player_strength_text_surface = small_font.render(player_strength_text, True, BLUE)
+        ai_strength_text_surface = small_font.render(ai_strength_text, True, RED)
+
+        player_strength_rect = player_strength_text_surface.get_rect(
             center=(centered_margin_x - RECT_WIDTH // 2, centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2))
-        ai_strength_rect = ai_strength_text.get_rect(center=(
+        ai_strength_rect = ai_strength_text_surface.get_rect(center=(
             centered_margin_x + BOARD_COLS * RECT_WIDTH + RECT_WIDTH // 2,
             centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2))
 
-        screen.blit(player_strength_text, player_strength_rect)
-        screen.blit(ai_strength_text, ai_strength_rect)
+        screen.blit(player_strength_text_surface, player_strength_rect)
+        screen.blit(ai_strength_text_surface, ai_strength_rect)
 
     # Highlight the valid board space and show faded green pawns
     if dragging_card:
@@ -309,8 +338,9 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
 
                                     # Show the potential strength decrease value in red next to the current strength value
                                     current_strength = board_values[power_down_index]['strength']
+                                    power_down_value = min(current_strength, dragging_card['card'].power_down_value)
                                     power_down_value_text = small_font.render(
-                                        f"-{dragging_card['card'].power_down_value}",
+                                        f"-{power_down_value}",
                                         True, (255, 0, 0))
                                     power_down_value_rect = power_down_value_text.get_rect()
                                     power_down_value_rect.bottomleft = (
