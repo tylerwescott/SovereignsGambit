@@ -3,7 +3,7 @@ import sys
 from constants import *
 from deck import Deck
 from images import load_images
-from utils import draw_rotated_card, get_arc_position_and_angle, update_hand_positions, ai_place_card, place_card_pawns, draw_board_and_elements, apply_power_up
+from utils import draw_rotated_card, get_arc_position_and_angle, update_hand_positions, ai_place_card, place_card_pawns, draw_board_and_elements, apply_power_up, draw_tooltip
 from card import Card
 
 pygame.init()
@@ -157,11 +157,12 @@ while running:
             turn_end = False  # Ensure the player's turn starts in the next iteration
             is_player_turn = True
 
+    mouse_x, mouse_y = pygame.mouse.get_pos()  # Track the mouse position for tooltip display
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            mouse_x, mouse_y = event.pos
             if end_turn_button.collidepoint(mouse_x, mouse_y):
                 end_turn()
             elif is_player_turn:
@@ -177,7 +178,6 @@ while running:
                     draw_card_from_player_deck(player_deck)
         elif event.type == pygame.MOUSEBUTTONUP and is_player_turn:
             if dragging_card:
-                mouse_x, mouse_y = event.pos
                 valid_placement = False
                 for row in range(BOARD_ROWS):
                     for col in range(BOARD_COLS):
@@ -201,11 +201,9 @@ while running:
                 dragging_card = None
         elif event.type == pygame.MOUSEMOTION:
             if dragging_card:
-                mouse_x, mouse_y = event.pos
                 dragging_card['rect'].x = mouse_x + dragging_offset_x
                 dragging_card['rect'].y = mouse_y + dragging_offset_y
 
-    # Inside the main loop, update the call to draw_board_and_elements
     # Draw board and elements
     draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards,
                             ai_hand_cards, player_deck.cards_left(), len(player_hand_cards), ai_deck.cards_left(),
@@ -277,6 +275,22 @@ while running:
     pygame.draw.rect(screen, BLACK, end_turn_button)
     end_turn_text = small_font.render('End Turn', True, WHITE)
     screen.blit(end_turn_text, (end_turn_button.x + 10, end_turn_button.y + 15))
+
+    # Tooltip feature: Draw tooltip if hovering over a card in hand or on board
+    if not dragging_card:  # Show tooltip only if not dragging a card
+        for card in player_hand_cards:  # Only show tooltip for cards in player's hand
+            if card['rect'].collidepoint(mouse_x, mouse_y):
+                draw_tooltip(screen, card['card'], (mouse_x, mouse_y))
+                break  # Show tooltip for only one card at a time
+
+        # Check for cards on the board (player and AI)
+        for row in range(BOARD_ROWS):
+            for col in range(BOARD_COLS):
+                index = row * BOARD_COLS + col
+                board_card = board_values[index]['card']
+                if board_card and pygame.Rect(centered_margin_x + col * RECT_WIDTH, centered_margin_y + row * RECT_HEIGHT, RECT_WIDTH, RECT_HEIGHT).collidepoint(mouse_x, mouse_y):
+                    draw_tooltip(screen, board_card, (mouse_x, mouse_y))
+                    break  # Show tooltip for only one card at a time
 
     pygame.display.flip()
 

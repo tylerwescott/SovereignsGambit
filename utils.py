@@ -313,3 +313,34 @@ def apply_power_up(card, base_row, base_col, board_values, player):
                 board_values[index]['strength'] += card.power_up_value
                 print(f"Power-up applied at ({new_row}, {new_col}). New strength: {board_values[index]['strength']}")
 
+def draw_tooltip(screen, card, position):
+    # Create a surface for the tooltip
+    font = pygame.font.SysFont(None, 24)
+    text_lines = [
+        f"Name: {card.name}",
+        f"Strength: {card.strength}",
+        f"Cost: {card.placement_cost}",
+        f"Pawns: {card.pawn_placement}",
+        f"Power Up: {card.power_up_positions} ({card.power_up_value})"
+    ]
+    text_surfaces = [font.render(line, True, (255, 255, 255)) for line in text_lines]
+    tooltip_width = max(surface.get_width() for surface in text_surfaces) + 10
+    tooltip_height = sum(surface.get_height() for surface in text_surfaces) + 10
+
+    tooltip_surface = pygame.Surface((tooltip_width, tooltip_height), pygame.SRCALPHA)
+    tooltip_surface.fill((0, 0, 0, 180))  # Semi-transparent black background
+
+    # Render the text on the tooltip surface
+    y_offset = 5
+    for text_surface in text_surfaces:
+        tooltip_surface.blit(text_surface, (5, y_offset))
+        y_offset += text_surface.get_height()
+
+    # Position the tooltip near the cursor but within screen bounds
+    screen_width, screen_height = screen.get_size()
+    x, y = position
+    x = min(x, screen_width - tooltip_width)
+    y = min(y, screen_height - tooltip_height)
+
+    # Blit the tooltip surface onto the main screen
+    screen.blit(tooltip_surface, (x, y))
