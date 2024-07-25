@@ -157,7 +157,6 @@ def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image
 
     draw_card_from_ai_deck(ai_deck)
 
-
 def draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards,
                             ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font,
                             green_pawn_image, red_pawn_image, dragging_card=None):
