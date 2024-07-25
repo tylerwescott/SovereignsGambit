@@ -1,5 +1,7 @@
 import pygame
+from images import load_images
 from constants import *
+green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image, knight_image, vanguard_image, guardian_image, sorcerer_image = load_images()
 
 def draw_rotated_card(screen, card):
     rect = card['rect']
@@ -9,6 +11,7 @@ def draw_rotated_card(screen, card):
     placement_cost = card['card'].placement_cost
     pawn_placement = card['card'].pawn_placement
     power_up_positions = card['card'].power_up_positions
+    power_down_positions = card['card'].power_down_positions  # Add this attribute to the Card class
 
     card_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
     card_surface.fill((0, 0, 0, 0))  # Transparent fill
@@ -30,7 +33,7 @@ def draw_rotated_card(screen, card):
     placement_cost_rect.topleft = (5, 5)
     card_surface.blit(placement_cost_text, placement_cost_rect.topleft)
 
-    # Draw the 7x7 grid to show pawn placement and power-up positions, resized to about one-third
+    # Draw the 7x7 grid to show pawn placement, power-up, and power-down positions
     grid_size = 7
     original_cell_size = min(rect.width, rect.height) // grid_size
     cell_size = int(original_cell_size * (1 / 3))  # Resize to one-third
@@ -41,7 +44,10 @@ def draw_rotated_card(screen, card):
         for col in range(grid_size):
             cell_x = col * cell_size
             cell_y = row * cell_size
-            if (row - grid_size // 2, col - grid_size // 2) in pawn_placement:
+            # Draw red for power-down positions
+            if (row - grid_size // 2, col - grid_size // 2) in power_down_positions:
+                pygame.draw.rect(grid_surface, RED, (cell_x, cell_y, cell_size, cell_size))
+            elif (row - grid_size // 2, col - grid_size // 2) in pawn_placement:
                 pygame.draw.rect(grid_surface, YELLOW, (cell_x, cell_y, cell_size, cell_size))
             elif (row - grid_size // 2, col - grid_size // 2) in power_up_positions:
                 pygame.draw.rect(grid_surface, BLUE, (cell_x, cell_y, cell_size, cell_size))
@@ -67,6 +73,22 @@ def draw_rotated_card(screen, card):
 
     pygame.draw.circle(screen, (255, 0, 0), top_left_pos, 5)  # Red dot at top left
     return top_left_pos
+def place_card_on_board(card, row, col, board_values, player=True):
+    index = row * BOARD_COLS + col
+    if player:
+        board_values[index]['player'] -= card.placement_cost
+        board_values[index]['ai'] = 0
+        board_values[index]['owner'] = 'player'
+    else:
+        board_values[index]['ai'] -= card.placement_cost
+        board_values[index]['player'] = 0
+        board_values[index]['owner'] = 'ai'
+    board_values[index]['image'] = card.image
+    board_values[index]['card'] = card
+    board_values[index]['strength'] = card.strength
+    place_card_pawns(card, row, col, player, board_values, green_pawn_image, red_pawn_image)
+    apply_power_up(card, row, col, board_values, player)
+    apply_power_down(card, row, col, board_values, player)  # Assuming power down logic is also implemented
 
 def get_arc_position_and_angle(start_pos, end_pos, start_angle, end_angle, progress, arc_height):
     x = start_pos[0] + (end_pos[0] - start_pos[0]) * progress
@@ -130,11 +152,10 @@ def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image
                                           original_ai_hand_positions, len(ai_hand_cards), player_hand_cards, player_deck_count,
                                           original_player_hand_positions, player_hand_count, font)
 
-                    place_card_on_board(card['card'], row, col, player=False)
+                    place_card_on_board(card['card'], row, col, board_values, player=False)
                     return
 
     draw_card_from_ai_deck(ai_deck)
-
 
 def draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards,
                             ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font,
@@ -359,6 +380,33 @@ def apply_power_up(card, base_row, base_col, board_values, player):
             elif not player and board_values[index]['owner'] == 'ai' and board_values[index]['card'] is not None:
                 board_values[index]['strength'] += card.power_up_value
                 print(f"Power-up applied at ({new_row}, {new_col}). New strength: {board_values[index]['strength']}")
+
+def apply_power_down(card, base_row, base_col, board_values, player):
+    for row_offset, col_offset in card.power_down_positions:
+        new_row = base_row + row_offset
+        new_col = base_col + col_offset
+        if 0 <= new_row < BOARD_ROWS and 0 <= new_col < BOARD_COLS:
+            index = new_row * BOARD_COLS + new_col
+            if board_values[index]['card'] is not None:
+                board_values[index]['strength'] -= card.power_down_value
+                print(f"Power-down applied at ({new_row}, {new_col}). New strength: {board_values[index]['strength']}")
+
+                # Check if the card's strength is 0 or less
+                if board_values[index]['strength'] <= 0:
+                    print(f"Card at ({new_row}, {new_col}) has been destroyed.")
+                    # Determine pawn owner based on the player who applied the power-down
+                    if player:
+                        board_values[index]['player'] = 1
+                        board_values[index]['ai'] = 0
+                        board_values[index]['image'] = green_pawn_image
+                    else:
+                        board_values[index]['player'] = 0
+                        board_values[index]['ai'] = 1
+                        board_values[index]['image'] = red_pawn_image
+
+                    # Remove the card from the board
+                    board_values[index]['card'] = None
+                    board_values[index]['owner'] = None
 
 def draw_tooltip(screen, card, position):
     # Create a surface for the tooltip

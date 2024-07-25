@@ -13,6 +13,7 @@ def load_images():
     KNIGHT_IMAGE_PATH = 'images/knight.jpg'  # Path to the knight image
     VANGUARD_IMAGE_PATH = 'images/vanguard.jpg'
     GUARDIAN_IMAGE_PATH = 'images/guardian.jpg'
+    SORCERER_IMAGE_PATH = 'images/sorcerer.jpg'
 
     green_pawn_image = pygame.image.load(GREEN_PAWN_IMAGE_PATH)
     green_pawn_image = pygame.transform.scale(green_pawn_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
@@ -36,5 +37,8 @@ def load_images():
     vanguard_image = pygame.transform.scale(vanguard_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
     guardian_image = pygame.image.load(GUARDIAN_IMAGE_PATH)
     guardian_image = pygame.transform.scale(guardian_image, (RECT_WIDTH - 2, RECT_HEIGHT - 2))
+    sorcerer_image = pygame.image.load("images/sorcerer.jpg")
+    sorcerer_image = pygame.transform.scale(sorcerer_image,
+                                            (RECT_WIDTH - 2, RECT_HEIGHT - 2))  # Adjust dimensions as needed
 
-    return green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image, knight_image, vanguard_image, guardian_image
+    return green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image, knight_image, vanguard_image, guardian_image, sorcerer_image

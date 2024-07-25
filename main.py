@@ -3,13 +3,13 @@ import sys
 from constants import *
 from deck import Deck
 from images import load_images
-from utils import draw_rotated_card, get_arc_position_and_angle, update_hand_positions, ai_place_card, place_card_pawns, draw_board_and_elements, apply_power_up, draw_tooltip
+from utils import *
 from card import Card
 
 pygame.init()
 
 # Load images
-green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image, knight_image, vanguard_image, guardian_image = load_images()
+green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image, knight_image, vanguard_image, guardian_image, sorcerer_image = load_images()
 
 # Create card instances
 foot_soldier_card = Card("Foot Soldier", 1, foot_soldier_image, [(0, 1)], 2)
@@ -21,10 +21,11 @@ shieldbearer_card = Card("Shieldbearer", 1, shieldbearer_image, [(-1, 0), (1, 0)
 knight_card = Card("Knight", 2, knight_image, [(0, 0)], 3, power_up_positions=[(-1, 0), (1, 0)], power_up_value=1)  # Knight card with power-up
 vanguard_card = Card("Vanguard", 1, vanguard_image, [(-1, 0), (1, 0), (0, -1), (0, 1)], 1)  # Vanguard card
 guardian_card = Card("Guardian", 1, guardian_image, [(0, 1)], 1, power_up_positions=[(-1, 0)], power_up_value=1)
+sorcerer_card = Card("Sorcerer", 2, sorcerer_image, [], 1, power_down_positions=[(0, 2)], power_down_value=2)
 
-# Initialize player and AI decks with the Guardian card included
-player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card, knight_card, vanguard_card, guardian_card] * 3)
-ai_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card, knight_card, vanguard_card, guardian_card] * 3)
+# Add Sorcerer card to the decks
+player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card, knight_card, sorcerer_card] * 4)
+ai_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card, knight_card, sorcerer_card] * 4)
 
 # Player hand cards and other variables
 player_hand_cards = []
@@ -120,23 +121,6 @@ def draw_card_from_ai_deck(deck):
             ai_hand_cards.pop()
             ai_arc_progress = 0
 
-def place_card_on_board(card, row, col, player=True):
-    index = row * BOARD_COLS + col
-    if player:
-        board_values[index]['player'] -= card.placement_cost
-        board_values[index]['ai'] = 0
-        board_values[index]['owner'] = 'player'
-    else:
-        board_values[index]['ai'] -= card.placement_cost
-        board_values[index]['player'] = 0
-        board_values[index]['owner'] = 'ai'
-    board_values[index]['image'] = card.image
-    board_values[index]['card'] = card  # Store the card itself
-    board_values[index]['strength'] = card.strength  # Initialize the strength attribute
-    place_card_pawns(card, row, col, player, board_values, green_pawn_image, red_pawn_image)
-    apply_power_up(card, row, col, board_values, player)
-    print(f"Card {card.name} placed at ({row}, {col}). Player: {board_values[index]['player']}, AI: {board_values[index]['ai']}")
-
 def end_turn():
     global is_player_turn, turn_end
     if is_player_turn:
@@ -189,7 +173,7 @@ while running:
                         index = row * BOARD_COLS + col
                         if space.collidepoint(mouse_x, mouse_y) and 1 <= col <= 5:
                             if board_values[index]['player'] >= dragging_card['card'].placement_cost:
-                                place_card_on_board(dragging_card['card'], row, col, player=True)
+                                place_card_on_board(dragging_card['card'], row, col, board_values, player=True)
                                 player_hand_cards.remove(dragging_card)
                                 update_hand_positions(player_hand_cards, PLAYER_HAND_POSITION_Y, original_player_hand_positions)
                                 valid_placement = True

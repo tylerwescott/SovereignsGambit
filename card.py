@@ -1,9 +1,11 @@
 class Card:
-    def __init__(self, name, placement_cost, image, pawn_placement, strength, power_up_positions=None, power_up_value=0):
+    def __init__(self, name, strength, image, pawn_placement, placement_cost, power_up_positions=None, power_up_value=0, power_down_positions=None, power_down_value=0):
         self.name = name
-        self.placement_cost = placement_cost
+        self.strength = strength
         self.image = image
         self.pawn_placement = pawn_placement
-        self.strength = strength
-        self.power_up_positions = power_up_positions or []
+        self.placement_cost = placement_cost
+        self.power_up_positions = power_up_positions if power_up_positions else []
         self.power_up_value = power_up_value
+        self.power_down_positions = power_down_positions if power_down_positions else []
+        self.power_down_value = power_down_value
