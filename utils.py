@@ -175,7 +175,14 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
 
             index = row * BOARD_COLS + col
             if board_values[index]['image'] is not None:
+                # Draw the card's image
                 screen.blit(board_values[index]['image'], (space_x + 1, space_y + 1))
+
+                # Draw highlighting for player or AI cards
+                if board_values[index]['owner'] == 'player':
+                    pygame.draw.rect(screen, (0, 0, 255), space, 2)  # Blue border for player
+                elif board_values[index]['owner'] == 'ai':
+                    pygame.draw.rect(screen, (255, 0, 0), space, 2)  # Red border for AI
 
                 # Draw the strength text if the card is present
                 if board_values[index]['card'] is not None:
@@ -183,31 +190,6 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                     strength_text = small_font.render(str(strength), True, BLACK)
                     strength_rect = strength_text.get_rect()
                     strength_rect.bottomleft = (space_x + 5, space_y + RECT_HEIGHT - 5)
-
-                    # Check if there is a power-up and show "+x" in green
-                    power_up_text = ""
-                    if dragging_card and (row, col) in [(row + pos[0], col + pos[1]) for pos in
-                                                        dragging_card['card'].power_up_positions]:
-                        power_up_value = dragging_card['card'].power_up_value
-                        power_up_text = f" +{power_up_value}"
-                        power_up_surface = small_font.render(power_up_text, True, (0, 255, 0))
-                        power_up_rect = power_up_surface.get_rect()
-                        power_up_rect.midleft = strength_rect.midright
-                        screen.blit(power_up_surface, power_up_rect.topleft)
-
-                    screen.blit(strength_text, strength_rect.topleft)
-
-                    # Check for power-down effect and show "-x" in red
-                    power_down_text = ""
-                    if dragging_card and (row, col) in [(row + pos[0], col + pos[1]) for pos in
-                                                        dragging_card['card'].power_down_positions]:
-                        power_down_value = dragging_card['card'].power_down_value
-                        power_down_text = f" -{power_down_value}"
-                        power_down_surface = small_font.render(power_down_text, True, (255, 0, 0))
-                        power_down_rect = power_down_surface.get_rect()
-                        power_down_rect.midleft = strength_rect.midright
-                        screen.blit(power_down_surface, power_down_rect.topleft)
-
                     screen.blit(strength_text, strength_rect.topleft)
 
                     # Update row strength totals
