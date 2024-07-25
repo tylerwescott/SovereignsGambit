@@ -374,27 +374,38 @@ def apply_power_up(card, base_row, base_col, board_values, player):
         new_col = base_col + col_offset
         if 0 <= new_row < BOARD_ROWS and 0 <= new_col < BOARD_COLS:
             index = new_row * BOARD_COLS + new_col
-            if player and board_values[index]['owner'] == 'player' and board_values[index]['card'] is not None:
-                board_values[index]['strength'] += card.power_up_value
-                print(f"Power-up applied at ({new_row}, {new_col}). New strength: {board_values[index]['strength']}")
-            elif not player and board_values[index]['owner'] == 'ai' and board_values[index]['card'] is not None:
+            target_card = board_values[index]['card']
+            target_owner = board_values[index]['owner']
+            # Ensure only the player's own cards are affected
+            if target_card and ((player and target_owner == 'player') or (not player and target_owner == 'ai')):
                 board_values[index]['strength'] += card.power_up_value
                 print(f"Power-up applied at ({new_row}, {new_col}). New strength: {board_values[index]['strength']}")
 
+
 def apply_power_down(card, base_row, base_col, board_values, player):
     for row_offset, col_offset in card.power_down_positions:
+        # Invert the column offset if the AI placed the card
+        if not player:
+            col_offset = -col_offset
+
         new_row = base_row + row_offset
         new_col = base_col + col_offset
         if 0 <= new_row < BOARD_ROWS and 0 <= new_col < BOARD_COLS:
             index = new_row * BOARD_COLS + new_col
-            if board_values[index]['card'] is not None:
+            target_card = board_values[index]['card']
+            target_owner = board_values[index]['owner']
+            # Ensure only the opponent's cards are affected
+            if target_card and ((player and target_owner == 'ai') or (not player and target_owner == 'player')):
                 board_values[index]['strength'] -= card.power_down_value
                 print(f"Power-down applied at ({new_row}, {new_col}). New strength: {board_values[index]['strength']}")
 
                 # Check if the card's strength is 0 or less
                 if board_values[index]['strength'] <= 0:
-                    print(f"Card at ({new_row}, {new_col}) has been destroyed.")
-                    # Determine pawn owner based on the player who applied the power-down
+                    # Remove the card and replace it with a pawn
+                    board_values[index]['card'] = None
+                    board_values[index]['strength'] = 0
+                    board_values[index]['owner'] = None
+                    # Place a pawn for the player who played the power-down card
                     if player:
                         board_values[index]['player'] = 1
                         board_values[index]['ai'] = 0
@@ -403,10 +414,6 @@ def apply_power_down(card, base_row, base_col, board_values, player):
                         board_values[index]['player'] = 0
                         board_values[index]['ai'] = 1
                         board_values[index]['image'] = red_pawn_image
-
-                    # Remove the card from the board
-                    board_values[index]['card'] = None
-                    board_values[index]['owner'] = None
 
 def draw_tooltip(screen, card, position):
     # Create a surface for the tooltip
