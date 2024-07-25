@@ -1,10 +1,12 @@
 import pygame
 import sys
+import random
 from constants import *
 from deck import Deck
 from images import load_images
 from utils import *
 from card import Card
+from particlePrinciple import ParticlePrinciple
 
 pygame.init()
 
@@ -59,6 +61,7 @@ centered_margin_x = (SCREEN_WIDTH - BOARD_WIDTH) // 2
 centered_margin_y = (SCREEN_HEIGHT - BOARD_HEIGHT) // 2
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+particle_system = ParticlePrinciple(screen)
 pygame.display.set_caption("Sovereign's Gambit - Board and Deck")
 
 # Fonts
@@ -139,7 +142,7 @@ running = True
 while running:
     if turn_end:
         if not is_player_turn:
-            ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image, red_pawn_image, draw_card_from_ai_deck, place_card_on_board, original_ai_hand_positions, centered_margin_x, centered_margin_y, small_font, player_hand_cards, original_player_hand_positions, player_deck.cards_left(), len(player_hand_cards), font)
+            ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image, red_pawn_image, draw_card_from_ai_deck, place_card_on_board, original_ai_hand_positions, centered_margin_x, centered_margin_y, small_font, player_hand_cards, original_player_hand_positions, player_deck.cards_left(), len(player_hand_cards), font, particle_system)
             turn_end = False  # Ensure the player's turn starts in the next iteration
             is_player_turn = True
 
@@ -173,7 +176,10 @@ while running:
                         index = row * BOARD_COLS + col
                         if space.collidepoint(mouse_x, mouse_y) and 1 <= col <= 5:
                             if board_values[index]['player'] >= dragging_card['card'].placement_cost:
-                                place_card_on_board(dragging_card['card'], row, col, board_values, player=True)
+                                place_card_on_board(dragging_card['card'], row, col, board_values, player=True,
+                                                    centered_margin_x=centered_margin_x,
+                                                    centered_margin_y=centered_margin_y,
+                                                    particle_system=particle_system)
                                 player_hand_cards.remove(dragging_card)
                                 update_hand_positions(player_hand_cards, PLAYER_HAND_POSITION_Y, original_player_hand_positions)
                                 valid_placement = True
@@ -278,6 +284,7 @@ while running:
                     draw_tooltip(screen, board_card, (mouse_x, mouse_y))
                     break  # Show tooltip for only one card at a time
 
+    particle_system.emit()
     pygame.display.flip()
 
 pygame.quit()

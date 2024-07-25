@@ -1,5 +1,7 @@
 import pygame
+import random
 from images import load_images
+from particlePrinciple import ParticlePrinciple
 from constants import *
 green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image, knight_image, vanguard_image, guardian_image, sorcerer_image = load_images()
 
@@ -73,7 +75,7 @@ def draw_rotated_card(screen, card):
 
     pygame.draw.circle(screen, (255, 0, 0), top_left_pos, 5)  # Red dot at top left
     return top_left_pos
-def place_card_on_board(card, row, col, board_values, player=True):
+def place_card_on_board(card, row, col, board_values, player=True, particle_system=None, centered_margin_x=None, centered_margin_y=None):
     index = row * BOARD_COLS + col
     if player:
         board_values[index]['player'] -= card.placement_cost
@@ -88,7 +90,24 @@ def place_card_on_board(card, row, col, board_values, player=True):
     board_values[index]['strength'] = card.strength
     place_card_pawns(card, row, col, player, board_values, green_pawn_image, red_pawn_image)
     apply_power_up(card, row, col, board_values, player)
-    apply_power_down(card, row, col, board_values, player)  # Assuming power down logic is also implemented
+    apply_power_down(card, row, col, board_values, player)
+    if particle_system and centered_margin_x is not None and centered_margin_y is not None:
+        trigger_particle_effect(row, col, centered_margin_x, centered_margin_y, particle_system)
+
+def trigger_particle_effect(row, col, centered_margin_x, centered_margin_y, particle_system):
+    card_x = centered_margin_x + col * RECT_WIDTH
+    card_y = centered_margin_y + row * RECT_HEIGHT
+    card_width = RECT_WIDTH
+    card_height = RECT_HEIGHT
+
+    # Emit particles from the sides of the card's rectangle
+    for offset in range(0, int(card_width), 5):
+        particle_system.add_particles((card_x + offset, card_y))
+        particle_system.add_particles((card_x + offset, card_y + card_height))
+
+    for offset in range(0, int(card_height), 5):
+        particle_system.add_particles((card_x, card_y + offset))
+        particle_system.add_particles((card_x + card_width, card_y + offset))
 
 def get_arc_position_and_angle(start_pos, end_pos, start_angle, end_angle, progress, arc_height):
     x = start_pos[0] + (end_pos[0] - start_pos[0]) * progress
@@ -133,7 +152,7 @@ def place_card_pawns(card, base_row, base_col, player, board_values, green_pawn_
 
 def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image, red_pawn_image, draw_card_from_ai_deck,
                   place_card_on_board, original_ai_hand_positions, centered_margin_x, centered_margin_y, small_font,
-                  player_hand_cards, original_player_hand_positions, player_deck_count, player_hand_count, font):
+                  player_hand_cards, original_player_hand_positions, player_deck_count, player_hand_count, font, particle_system):
     for card in ai_hand_cards:
         for row in range(BOARD_ROWS):
             for col in range(BOARD_COLS):
@@ -147,12 +166,11 @@ def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image
                     start_angle = card['angle']
                     end_angle = 0  # Set the angle to 0 when placing on the board
 
-                    animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_angle, 1000, centered_margin_x, centered_margin_y,
-                                          board_values, green_pawn_image, red_pawn_image, small_font, ai_hand_cards, ai_deck.cards_left(),
-                                          original_ai_hand_positions, len(ai_hand_cards), player_hand_cards, player_deck_count,
-                                          original_player_hand_positions, player_hand_count, font)
+                    # Animate the card to the board
+                    animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_angle, 1000, centered_margin_x, centered_margin_y, board_values, green_pawn_image, red_pawn_image, small_font, ai_hand_cards, ai_deck.cards_left(), original_ai_hand_positions, len(ai_hand_cards), player_hand_cards, player_deck_count, original_player_hand_positions, player_hand_count, font)
 
-                    place_card_on_board(card['card'], row, col, board_values, player=False)
+                    # After animation, place the card and trigger effects
+                    place_card_on_board(card['card'], row, col, board_values, player=False, particle_system=particle_system, centered_margin_x=centered_margin_x, centered_margin_y=centered_margin_y)
                     return
 
     draw_card_from_ai_deck(ai_deck)
@@ -185,11 +203,14 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                     strength_rect.bottomleft = (space_x + 5, space_y + RECT_HEIGHT - 5)
                     screen.blit(strength_text, strength_rect.topleft)
 
-                    # Update row strength totals
+                    # Draw border based on card owner
                     if board_values[index]['owner'] == 'player':
+                        pygame.draw.rect(screen, BLUE, space, 3)  # Blue border for player
                         player_row_strengths[row] += strength
                     elif board_values[index]['owner'] == 'ai':
+                        pygame.draw.rect(screen, RED, space, 3)  # Red border for AI
                         ai_row_strengths[row] += strength
+
             else:
                 if col == 1:
                     screen.blit(green_pawn_image, (space_x + 1, space_y + 1))
@@ -207,7 +228,6 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
 
     # Preview strength changes while dragging a card
     if dragging_card:
-        # Create copies of row strengths to modify for preview
         preview_player_row_strengths = player_row_strengths[:]
         preview_ai_row_strengths = ai_row_strengths[:]
 
@@ -395,21 +415,14 @@ def animate_card_to_board(screen, card, start_pos, end_pos, start_angle, end_ang
         current_y = start_pos[1] + (end_pos[1] - start_pos[1]) * progress
         current_angle = start_angle + (end_angle - start_angle) * progress
 
-        # Debug: Print current positions and angles
-        print(f"Progress: {progress:.2f}, Current Pos: ({current_x:.2f}, {current_y:.2f}), Target Pos: {end_pos}, Current Angle: {current_angle:.2f}, Target Angle: {end_angle:.2f}")
-
         draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards, ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font, green_pawn_image, red_pawn_image)
 
-        # Draw the moving card
         moving_card_rect = pygame.Rect(current_x - card_center_offset[0], current_y - card_center_offset[1], card_width, card_height)
         draw_rotated_card(screen, {
             'rect': moving_card_rect,
             'angle': current_angle,
             'card': card['card']
         })
-        # Debug: Draw current position markers for the card
-        pygame.draw.circle(screen, (255, 0, 0), (int(current_x), int(current_y)), 5)
-        pygame.draw.rect(screen, (255, 0, 0), moving_card_rect, 1)
 
         pygame.display.flip()
 
