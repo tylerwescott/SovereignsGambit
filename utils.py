@@ -160,6 +160,12 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                     strength_rect.bottomleft = (space_x + 5, space_y + RECT_HEIGHT - 5)
                     screen.blit(strength_text, strength_rect.topleft)
 
+                    # Draw a blue outline for player-owned cards and a red outline for AI-owned cards
+                    if board_values[index]['owner'] == 'player':
+                        pygame.draw.rect(screen, BLUE, space, 5)
+                    elif board_values[index]['owner'] == 'ai':
+                        pygame.draw.rect(screen, RED, space, 5)
+
                     # Update row strength totals
                     if board_values[index]['owner'] == 'player':
                         player_row_strengths[row] += board_values[index]['strength']
@@ -222,7 +228,6 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                                 if board_values[pawn_index]['card'] is None:
                                     pawn_x = centered_margin_x + new_col * RECT_WIDTH
                                     pawn_y = centered_margin_y + new_row * RECT_HEIGHT
-                                    pawn_space = pygame.Rect(pawn_x, pawn_y, RECT_WIDTH, RECT_HEIGHT)
                                     faded_green_pawn = green_pawn_image.copy()
                                     faded_green_pawn.set_alpha(128)  # Set transparency to 50%
                                     screen.blit(faded_green_pawn, (pawn_x + 1, pawn_y + 1))
