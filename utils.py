@@ -157,6 +157,7 @@ def ai_place_card(screen, ai_hand_cards, board_values, ai_deck, green_pawn_image
 
     draw_card_from_ai_deck(ai_deck)
 
+
 def draw_board_and_elements(screen, board_values, centered_margin_x, centered_margin_y, small_font, player_hand_cards,
                             ai_hand_cards, player_deck_count, player_hand_count, ai_deck_count, ai_hand_count, font,
                             green_pawn_image, red_pawn_image, dragging_card=None):
@@ -194,6 +195,19 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                         power_up_rect = power_up_surface.get_rect()
                         power_up_rect.midleft = strength_rect.midright
                         screen.blit(power_up_surface, power_up_rect.topleft)
+
+                    screen.blit(strength_text, strength_rect.topleft)
+
+                    # Check for power-down effect and show "-x" in red
+                    power_down_text = ""
+                    if dragging_card and (row, col) in [(row + pos[0], col + pos[1]) for pos in
+                                                        dragging_card['card'].power_down_positions]:
+                        power_down_value = dragging_card['card'].power_down_value
+                        power_down_text = f" -{power_down_value}"
+                        power_down_surface = small_font.render(power_down_text, True, (255, 0, 0))
+                        power_down_rect = power_down_surface.get_rect()
+                        power_down_rect.midleft = strength_rect.midright
+                        screen.blit(power_down_surface, power_down_rect.topleft)
 
                     screen.blit(strength_text, strength_rect.topleft)
 
@@ -235,8 +249,8 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
         player_strength_rect = player_strength_text.get_rect(
             center=(centered_margin_x - RECT_WIDTH // 2, centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2))
         ai_strength_rect = ai_strength_text.get_rect(center=(
-        centered_margin_x + BOARD_COLS * RECT_WIDTH + RECT_WIDTH // 2,
-        centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2))
+            centered_margin_x + BOARD_COLS * RECT_WIDTH + RECT_WIDTH // 2,
+            centered_margin_y + row * RECT_HEIGHT + RECT_HEIGHT // 2))
 
         screen.blit(player_strength_text, player_strength_rect)
         screen.blit(ai_strength_text, ai_strength_rect)
@@ -282,8 +296,8 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                                     power_up_image = pygame.transform.scale(power_up_image,
                                                                             (power_up_size, power_up_size))
                                     screen.blit(power_up_image, (
-                                    power_up_x + RECT_WIDTH // 2 - power_up_image.get_width() // 2,
-                                    power_up_y + RECT_HEIGHT - power_up_image.get_height() - 5))
+                                        power_up_x + RECT_WIDTH // 2 - power_up_image.get_width() // 2,
+                                        power_up_y + RECT_HEIGHT - power_up_image.get_height() - 5))
 
                                     # Show the potential new strength value in green next to the current strength value
                                     current_strength = board_values[power_up_index]['strength']
@@ -292,8 +306,35 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
                                                                             True, (0, 255, 0))
                                     power_up_value_rect = power_up_value_text.get_rect()
                                     power_up_value_rect.bottomleft = (
-                                    power_up_x + 5 + strength_text.get_width(), power_up_y + RECT_HEIGHT - 5)
+                                        power_up_x + 5 + strength_text.get_width(), power_up_y + RECT_HEIGHT - 5)
                                     screen.blit(power_up_value_text, power_up_value_rect.topleft)
+
+                        # Show power-down indicator
+                        for row_offset, col_offset in dragging_card['card'].power_down_positions:
+                            new_row = row + row_offset
+                            new_col = col + col_offset
+                            if 0 <= new_row < BOARD_ROWS and 0 <= new_col < BOARD_COLS:
+                                power_down_index = new_row * BOARD_COLS + new_col
+                                if board_values[power_down_index]['card'] is not None:
+                                    power_down_x = centered_margin_x + new_col * RECT_WIDTH
+                                    power_down_y = centered_margin_y + new_row * RECT_HEIGHT
+                                    power_down_image = pygame.image.load('images/powerDown.jpg')
+                                    power_down_size = int(RECT_WIDTH / 4)
+                                    power_down_image = pygame.transform.scale(power_down_image,
+                                                                              (power_down_size, power_down_size))
+                                    screen.blit(power_down_image, (
+                                        power_down_x + RECT_WIDTH // 2 - power_down_image.get_width() // 2,
+                                        power_down_y + RECT_HEIGHT - power_down_image.get_height() - 5))
+
+                                    # Show the potential strength decrease value in red next to the current strength value
+                                    current_strength = board_values[power_down_index]['strength']
+                                    power_down_value_text = small_font.render(
+                                        f"-{dragging_card['card'].power_down_value}",
+                                        True, (255, 0, 0))
+                                    power_down_value_rect = power_down_value_text.get_rect()
+                                    power_down_value_rect.bottomleft = (
+                                        power_down_x + 5 + strength_text.get_width(), power_down_y + RECT_HEIGHT - 5)
+                                    screen.blit(power_down_value_text, power_down_value_rect.topleft)
 
     # Draw the player's hand
     for player_card in player_hand_cards:
