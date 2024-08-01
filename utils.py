@@ -233,9 +233,9 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
             for col in range(BOARD_COLS):
                 index = row * BOARD_COLS + col
                 if board_values[index]['card'] is None and pygame.Rect(centered_margin_x + col * RECT_WIDTH,
-                                                                      centered_margin_y + row * RECT_HEIGHT,
-                                                                      RECT_WIDTH, RECT_HEIGHT).collidepoint(
-                        dragging_card['rect'].center):
+                                                                       centered_margin_y + row * RECT_HEIGHT,
+                                                                       RECT_WIDTH, RECT_HEIGHT).collidepoint(
+                    dragging_card['rect'].center):
                     # Check if the card can be placed here based on pawn placement requirements
                     can_place = True
                     required_pawns = 0
@@ -253,6 +253,8 @@ def draw_board_and_elements(screen, board_values, centered_margin_x, centered_ma
 
                     if can_place and board_values[index]['player'] >= required_pawns:
                         valid_placement = True
+                        # Highlight the valid space and handle strength preview...
+                        # Your existing code for highlighting and strength preview
 
                         # Calculate potential strength changes
                         preview_player_row_strengths = player_row_strengths[:]
