@@ -3,7 +3,7 @@ import random
 from images import load_images
 from particlePrinciple import ParticlePrinciple
 from constants import *
-green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image, knight_image, vanguard_image, guardian_image, sorcerer_image = load_images()
+green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image, knight_image, vanguard_image, guardian_image, sorcerer_image, fire_summoner_image, fire_monster_image = load_images()
 
 def draw_rotated_card(screen, card):
     rect = card['rect']

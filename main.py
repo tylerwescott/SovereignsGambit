@@ -11,7 +11,7 @@ from particlePrinciple import ParticlePrinciple
 pygame.init()
 
 # Load images
-green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image, knight_image, vanguard_image, guardian_image, sorcerer_image = load_images()
+green_pawn_image, red_pawn_image, foot_soldier_image, apprentice_image, rogue_image, spearman_image, archer_image, shieldbearer_image, knight_image, vanguard_image, guardian_image, sorcerer_image, fire_summoner_image, fire_monster_image = load_images()
 
 # Create card instances
 foot_soldier_card = Card("Foot Soldier", 2, foot_soldier_image, [(0, 1)], 1)
@@ -24,10 +24,12 @@ knight_card = Card("Knight", 3, knight_image, [(0, 0)], 2, power_up_positions=[(
 vanguard_card = Card("Vanguard", 1, vanguard_image, [(-1, 0), (1, 0), (0, -1), (0, 1)], 1)  # Vanguard card
 guardian_card = Card("Guardian", 1, guardian_image, [(0, 1)], 1, power_up_positions=[(-1, 0)], power_up_value=1)
 sorcerer_card = Card("Sorcerer", 2, sorcerer_image, [], 1, power_down_positions=[(0, 2)], power_down_value=2)
+fire_monster_card = Card("Fire Monster", 2, fire_monster_image, [(0, 0)], 1, power_down_positions=[(-1, 0), (0, 1), (1, 0)], power_down_value=1)
+fire_summoner_card = Card("Fire Summoner", 1, fire_summoner_image, [(0, 1)], 1, generate_card_when_played=True, generated_card_when_played=fire_monster_card)
 
 # Add Sorcerer card to the decks
-player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card, knight_card, vanguard_card, guardian_card, sorcerer_card] * 4)
-ai_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card, knight_card, vanguard_card, guardian_card, sorcerer_card] * 4)
+player_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card, knight_card, vanguard_card, guardian_card, sorcerer_card, fire_summoner_card] * 4)
+ai_deck = Deck([foot_soldier_card, apprentice_card, rogue_card, spearman_card, archer_card, shieldbearer_card, knight_card, vanguard_card, guardian_card, sorcerer_card, fire_summoner_card] * 4)
 
 # Player hand cards and other variables
 player_hand_cards = []
